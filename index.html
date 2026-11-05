@@ -3,322 +3,544 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>コンピュータの言葉：土台</title>
+<title>__TITLE__ コードリーディング</title>
+<!--
+  code-walkthrough テンプレート（依存ゼロ・オフライン可）
+  差し替える場所は「★1〜★4」だけ。エンジン部分（ENGINE）は触らない。
+    ★1 META   タイトル・計算量などの見出し
+    ★2 CODE   擬似コード（id で行を識別する。行番号は使わない）
+    ★3 trace  アルゴリズムを実行して rec() でスナップショットを溜める
+    ★4 drawView  state を絵にする（棒グラフ／グリッド／ノード等）
+  サンプルはバブルソート。
+-->
 <style>
 :root{
   --bg:#0b1020; --panel:#111833; --code-bg:#060a18; --line:#1e293b; --text:#cbd5e1; --muted:#64748b;
-  --accent:#3b82f6; --accent-soft:rgba(59,130,246,.2);
-  --ok:#10b981; --warn:#fbbf24; --bad:#f43f5e;
+  --accent:#3b82f6; --accent-soft:rgba(59,130,246,.25);
+  --idle:#6366f1; --compare:#fbbf24; --change:#f43f5e; --done:#10b981;
 }
-:root[data-theme="light"]{--bg:#f1f5f9;--panel:#fff;--code-bg:#f8fafc;--line:#e2e8f0;--text:#334155;--muted:#64748b;--accent:#2563eb;--accent-soft:rgba(37,99,235,.12)}
-@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f1f5f9;--panel:#fff;--code-bg:#f8fafc;--line:#e2e8f0;--text:#334155;--muted:#64748b;--accent:#2563eb;--accent-soft:rgba(37,99,235,.12)}}
+:root[data-theme="light"]{
+  --bg:#f1f5f9; --panel:#ffffff; --code-bg:#f8fafc; --line:#e2e8f0; --text:#334155; --muted:#64748b;
+  --accent:#2563eb; --accent-soft:rgba(37,99,235,.15);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f1f5f9; --panel:#ffffff; --code-bg:#f8fafc; --line:#e2e8f0; --text:#334155; --muted:#64748b;
+    --accent:#2563eb; --accent-soft:rgba(37,99,235,.15);
+  }
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.75}
-.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 64px;display:grid;grid-template-columns:1fr;gap:24px}
-@media(min-width:900px){.wrap{grid-template-columns:200px 1fr}}
-nav{position:sticky;top:12px;align-self:start;font-size:.8rem}
-nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 8px;border-left:3px solid var(--line)}
-nav a:hover{color:var(--accent);border-left-color:var(--accent)}
-@media(max-width:899px){nav{position:static;display:flex;flex-wrap:wrap;gap:4px}nav a{border:1px solid var(--line);border-radius:8px}}
-h1{font-size:1.4rem;margin:0 0 4px}
-h2{font-size:1.1rem;margin:0 0 10px;display:flex;gap:10px;align-items:center}
-h2 .n{background:var(--accent);color:#fff;border-radius:8px;padding:0 10px;font-size:.9rem}
-h3{font-size:.92rem;margin:16px 0 6px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:1200px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:20px}
+h1{font-size:1.25rem;margin:0}
 .sub{color:var(--muted);font-size:.85rem}
-section.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:18px}
-code,pre{font-family:ui-monospace,"JetBrains Mono",Menlo,monospace}
-code{background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.88em}
-pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:.85rem;line-height:1.55;overflow:auto;margin:8px 0}
-pre .c{color:var(--muted)}
-.box{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:8px 14px;margin:12px 0;font-size:.92rem}
-.box.warn{border-left-color:var(--warn);background:rgba(251,191,36,.12)}
-.box.ok{border-left-color:var(--ok);background:rgba(16,185,129,.12)}
-.pdf{display:inline-block;font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 8px;margin-left:auto;font-weight:400}
-table{border-collapse:collapse;font-size:.85rem;margin:8px 0}
-th,td{border:1px solid var(--line);padding:4px 10px;text-align:left}
-th{background:var(--code-bg)}
-button{font:inherit;font-size:.85rem;color:var(--text);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:6px 14px;cursor:pointer}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:2px 10px;font-size:.78rem;font-family:ui-monospace,Menlo,monospace}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:960px){.grid{grid-template-columns:7fr 5fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h2{font-size:.9rem;margin:0 0 10px}
+.col{display:flex;flex-direction:column;gap:16px}
+
+/* ---- ここが「一目惚れ」ポイント: コード行ハイライト ---- */
+.code{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:10px;
+  font:13px/1.5 ui-monospace,"JetBrains Mono",Menlo,monospace}
+.cl{display:flex;gap:10px;padding:4px 8px;border-left:4px solid transparent;border-radius:4px;
+  white-space:pre;transition:background-color .6s,border-color .6s}
+.cl .no{color:var(--muted);user-select:none;min-width:1.5em;text-align:right}
+.cl.active{background:var(--accent-soft);border-left-color:var(--accent);color:var(--accent);font-weight:600}
+
+/* 説明バー（いま何が起きたか） */
+.say{display:flex;gap:12px;align-items:center;margin-top:14px;padding:12px 14px;
+  border:1px solid var(--line);border-radius:12px;background:var(--code-bg);min-height:56px}
+.say .ico{flex:none;width:28px;height:28px;border-radius:8px;background:var(--accent-soft);display:grid;place-items:center}
+
+/* 変数ウォッチ */
+.vars{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.var{border:1px solid var(--line);background:var(--code-bg);border-radius:10px;padding:6px 10px;font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
+.var b{display:block;font-size:1.05rem;color:var(--compare)}
+.var.changed b{color:var(--change)}
+
+/* 操作系 */
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+button{font:inherit;font-size:.85rem;color:var(--text);background:var(--code-bg);border:1px solid var(--line);
+  border-radius:10px;padding:8px 14px;cursor:pointer}
 button:hover{border-color:var(--accent)}
-button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.mem{display:flex;gap:2px;margin:10px 0;flex-wrap:wrap}
-.cell{border:1px solid var(--line);background:var(--code-bg);border-radius:8px;padding:4px 10px;text-align:center;font:.78rem ui-monospace,Menlo,monospace;min-width:92px;transition:background .2s,border-color .2s}
-.cell small{display:block;color:var(--muted)}
-.cell.hit{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
-.ladder{counter-reset:s;list-style:none;padding:0;margin:0}
-.ladder li{counter-increment:s;padding:6px 0 6px 38px;position:relative;border-bottom:1px dashed var(--line);font-size:.92rem}
-.ladder li::before{content:counter(s);position:absolute;left:0;top:7px;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:.8rem}
-.ladder li.goal::before{background:var(--accent);color:#fff}
-details{border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:8px 0;background:var(--code-bg)}
-summary{cursor:pointer;font-weight:600;font-size:.9rem}
-.st{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
-@media(min-width:700px){.st{grid-template-columns:1fr 1fr}}
-.regs{display:flex;gap:10px;flex-wrap:wrap;font:.82rem ui-monospace,Menlo,monospace}
-.regs span{border:1px solid var(--line);border-radius:8px;padding:2px 10px;background:var(--code-bg)}
-.regs b{color:var(--warn)}
-.verdict{margin-top:8px;font-weight:700}
-.verdict.bad{color:var(--bad)}.verdict.ok{color:var(--ok)}
-a{color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+input[type=range]{accent-color:var(--accent);flex:1;min-width:120px}
+.bar-progress{height:4px;background:var(--line);border-radius:2px;margin-top:12px;overflow:hidden}
+.bar-progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .6s}
+
+/* 描画領域（★4 が使う） */
+#view{position:relative;min-height:300px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.bar{position:absolute;bottom:22px;border-radius:6px 6px 0 0;transition:left .45s cubic-bezier(.34,1.25,.64,1),background-color .25s,height .25s}
+.bar span{position:absolute;top:-18px;left:0;right:0;text-align:center;font-size:.75rem;font-weight:600}
+.idx{position:absolute;bottom:2px;text-align:center;font-size:.7rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace;transition:left .45s}
+.stk{font:12.5px/1.4 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.srow{display:flex;gap:12px;padding:5px 10px;border-bottom:1px solid var(--line);background:var(--code-bg);transition:background-color .6s}
+.srow:last-child{border-bottom:0}
+.srow .ad{color:var(--muted);min-width:5.5em}
+.srow.base{color:var(--muted);font-size:.75rem}
+.srow.live:not(.empty){background:rgba(99,102,241,.2)}
+.srow.dead{opacity:.45}
+.srow.w{background:rgba(244,63,94,.35)!important;opacity:1}
+.srow.r{background:rgba(251,191,36,.35)!important;opacity:1}
+.srow i{color:var(--muted);font-style:normal;font-size:.8em}
+.sp{color:var(--accent)}
+.calls{margin-top:10px;font-size:.82rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip.now{border-color:var(--accent);color:var(--accent);font-weight:700}
+:root{--muted-legend:#64748b}
+.tw{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+#ttbl,.ref{border-collapse:collapse;width:100%;font:12px/1.4 ui-monospace,Menlo,monospace}
+#ttbl th,#ttbl td,.ref th,.ref td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+#ttbl thead th{position:sticky;top:0;background:var(--panel);z-index:1}
+#ttbl td.mn{text-align:left}
+#ttbl tr.now{background:var(--accent-soft);font-weight:600}
+#ttbl td.chg{color:var(--change);font-weight:700}
+#ttbl td.jmp{color:var(--compare);font-weight:700}
+.ref th,.ref td{text-align:left;white-space:normal}
+.ref td.u{color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:960px){.two{grid-template-columns:1fr 1fr}}
+h3{font-size:.85rem;margin:0 0 8px}
+.fldrow{display:flex;gap:2px;margin:6px 0}
+.fld{border-radius:6px;padding:4px 6px;font-size:.72rem;text-align:center;min-width:0;overflow:hidden;
+  border:1px solid var(--line);background:var(--code-bg)}
+.fld small{display:block;color:var(--muted);font-size:.65rem}
+.fld code{font-size:.72rem;letter-spacing:-.02em}
+.f-op{border-color:#6366f1}.f-rs{border-color:#10b981}.f-rt{border-color:#fbbf24}.f-rd{border-color:#f43f5e}
+.f-shamt{border-color:#64748b}.f-funct{border-color:#8b5cf6}.f-imm{border-color:#06b6d4}.f-addr{border-color:#06b6d4}
+.bitrule{display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);margin-top:8px}
+.fnotes{list-style:none;padding:0;margin:6px 0 0;font-size:.8rem}
+.fnotes li{margin:.25em 0}
+.fmtbox{margin-bottom:10px;font-size:.85rem}
+#ttbl th,#stbl th{position:sticky;left:0;background:var(--panel);text-align:left;z-index:1}
+#ttbl td.now,#stbl td.now{background:var(--accent-soft)}
+#stbl{border-collapse:collapse;width:100%;font:12px/1.4 ui-monospace,Menlo,monospace}
+#stbl th,#stbl td{padding:4px 8px;border:1px solid var(--line);white-space:nowrap;text-align:right}
+#stbl td.gray{background:rgba(100,116,139,.25)}
+#stbl td.chg{color:var(--change);font-weight:700}
+.stale{opacity:.4}
+#ttbl td{border:1px solid var(--line)}
+.cl .ad{color:var(--muted);font-size:.72rem;min-width:5.6em;user-select:none;align-self:center}
+.cl .cyc{margin-left:auto;padding-left:14px;color:var(--muted);font-weight:400;font-size:.72rem}
+.cl .cyc b{color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:0 5px}
+.ctlbar{position:sticky;top:0;z-index:5;margin-bottom:16px;padding:10px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.ctlbar .ctrl{margin-top:8px}.ctlbar .bar-progress{margin-top:8px}
+.pair{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+@media(min-width:960px){.pair{grid-template-columns:minmax(360px,5fr) 7fr}}
+.pair>*{min-width:0}
+.pair .code{overflow-x:auto}
+#ttbl,#stbl{table-layout:fixed}
+#ttbl td,#stbl td{overflow:hidden;text-overflow:clip}
+#ttbl tr:nth-child(4) td{white-space:normal;word-break:break-all;font-size:11px;line-height:1.25}
+#ttbl th{width:auto}
+.notes li{margin:.3em 0;font-size:.88rem}
+footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.bar,.idx{transition:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<nav>
-  <a href="#map">0 地図</a><a href="#s1">1 言葉とは</a><a href="#s2">2 レジスタとメモリ</a><a href="#s3">3 算術</a>
-  <a href="#s4">4 lw / sw</a><a href="#s5">5 比較と分岐</a><a href="#s6">6 PC とジャンプ</a><a href="#s7">7 手続き</a>
-  <a href="#s8">8 スタック</a><a href="#s9">9 なぜ退避</a><a href="#s10">10 確認問題</a>
-</nav>
-<main>
-  <h1>コンピュータの言葉：fact を読むための土台</h1>
-  <div class="sub">第2章スライドの「入れ子にされた手続例（p.104-106）」を読むのに必要な前提を、下から積み上げ直す補習ページ。</div>
-
-  <section class="card" id="map">
-    <h2>0 地図：fact にたどり着くまでの9段</h2>
-    <ol class="ladder">
-      <li>言葉（命令）とは何か ― CPU が理解できる語彙</li>
-      <li>材料 ― レジスタ（作業台）とメモリ（倉庫）</li>
-      <li>算術命令 ― <code>add</code> <code>addi</code> は必ず「宛先, 元1, 元2」</li>
-      <li>メモリの出し入れ ― <code>lw</code> <code>sw</code> とオフセット</li>
-      <li>比較と分岐 ― <code>slti</code> + <code>beq</code> で if を作る</li>
-      <li>PC とジャンプ ― <code>jal</code> は「飛んで、戻り先を $ra に置く」</li>
-      <li>手続き（関数）の約束 ― 引数 $a0・結果 $v0・レジスタ規約</li>
-      <li>スタック ― 「$sp を動かして、自分の机を借りる」</li>
-      <li class="goal">入れ子・再帰 ― なぜ $ra と $a0 を退避するのか ＝ <b>fact</b></li>
-    </ol>
-    <div class="box">どの段で「あれ？」となるかが分かれば十分。1段ずつ読んで、止まった段だけ戻る使い方を想定している。
-    fact の1命令ずつの動きは <a href="mips/fact-walkthrough.html">fact-walkthrough.html</a> にある。</div>
-  </section>
-
-  <section class="card" id="s1">
-    <h2><span class="n">1</span>「言葉」とは：命令セット <span class="pdf">講義前半（別PDF）</span></h2>
-    <p>CPU は日本語も C も分からない。分かるのは、あらかじめ決められた<b>命令の一覧（命令セット）</b>だけ。これが「コンピュータの言葉」。MIPS は命令セットの1種類で、特徴は<b>全命令が 32bit 固定長</b>であること。</p>
-    <pre>人間が書く(アセンブリ)   addi $sp, $sp, -8
-        ↓ アセンブラ
-CPUが読む(機械語)        0010 0011 1011 1101 1111 1111 1111 1000  = 0x23BDFFF8</pre>
-    <p>アセンブリと機械語は<b>1対1</b>で対応する。mnemonic（<code>addi</code> など）は機械語の op/funct に付けた人間用の名前に過ぎない。</p>
-    <div class="box warn"><b>よくある誤解</b>「レジスタは命令を入れるところ？」→ いいえ。<b>命令はメモリに置かれている</b>。CPU は PC（次の命令のアドレス）が指すメモリから命令を取り出して実行する。レジスタは、命令が計算に使う<b>データ</b>の作業台。</div>
-  </section>
-
-  <section class="card" id="s2">
-    <h2><span class="n">2</span>材料：レジスタとメモリ</h2>
-    <table>
-      <tr><th></th><th>レジスタ</th><th>メモリ</th></tr>
-      <tr><td>数</td><td>32個（各32bit）</td><td>何十億バイト</td></tr>
-      <tr><td>速さ</td><td>非常に速い</td><td>遅い</td></tr>
-      <tr><td>呼び方</td><td>番号／名前（<code>$t0</code>）</td><td><b>アドレス</b>（1バイトごとに番号）</td></tr>
-      <tr><td>演算</td><td>できる</td><td>直接はできない</td></tr>
-    </table>
-    <p>MIPS の演算命令が触れるのは<b>レジスタだけ</b>。メモリの値を計算に使うには、いったんレジスタへ<b>運ぶ</b>（<code>lw</code>）、結果はメモリへ<b>書き戻す</b>（<code>sw</code>）。これが後で出てくる「退避・復元」の正体。</p>
-    <div class="box">1語 = 32bit = <b>4バイト</b>。メモリのアドレスはバイト単位なので、隣の語は +4 番地。「アドレスに ×4」が頻繁に出てくるのはこのため。</div>
-  </section>
-
-  <section class="card" id="s3">
-    <h2><span class="n">3</span>算術命令：宛先, 元1, 元2 <span class="pdf">p.80前後（前半PDF）</span></h2>
-<pre>add  $t0, $s1, $s2     <span class="c"># $t0 = $s1 + $s2</span>
-sub  $t0, $s1, $s2     <span class="c"># $t0 = $s1 - $s2</span>
-addi $t0, $s1, 5       <span class="c"># $t0 = $s1 + 5   （第3項が定数）</span>
-mul  $v0, $a0, $v0     <span class="c"># $v0 = $a0 * $v0</span></pre>
-    <ul>
-      <li><b>書き方は「宛先が先頭」</b>。機械語では順番が違う（R形式は <code>rs rt rd</code> の順で、rd＝宛先が最後）。ここが入れ替わるのでミスしやすい。</li>
-      <li><code>$zero</code> は常に 0。<code>addi $v0,$zero,1</code> は「0+1」で<b>定数 1 を $v0 に入れる</b>。</li>
-      <li>減算に <code>subi</code> は無い。<code>addi</code> に負の定数を使う（<code>addi $sp,$sp,-8</code>）。</li>
-    </ul>
-    <p>例 <code>f = (g+h) - (i+j)</code> ※ g,h,i,j = $s1〜$s4, f = $s0</p>
-<pre>add $t0, $s1, $s2     <span class="c"># t0 = g+h</span>
-add $t1, $s3, $s4     <span class="c"># t1 = i+j</span>
-sub $s0, $t0, $t1     <span class="c"># f  = t0 - t1</span></pre>
-  </section>
-
-  <section class="card" id="s4">
-    <h2><span class="n">4</span>メモリの出し入れ：lw / sw とオフセット</h2>
-<pre>lw  $t0, 8($s3)     <span class="c"># $t0 ← Mem[ $s3 + 8 ]   （メモリ → レジスタ, load word）</span>
-sw  $t0, 8($s3)     <span class="c"># Mem[ $s3 + 8 ] ← $t0   （レジスタ → メモリ, store word）</span></pre>
-    <p><code>8($s3)</code> の読み方：<b>ベース</b>＝レジスタ <code>$s3</code> の中身（アドレス）、<b>オフセット</b>＝<code>8</code>。アクセス先は <code>$s3 + 8</code> 番地。</p>
-    <div class="box"><b>オフセットはレジスタ上の定数ではない</b>。命令の機械語の中の <code>imm</code>（16bit）フィールドに<b>直接埋め込まれた定数</b>。レジスタの中身は変わりうるが、オフセットは命令に焼き込まれて不変。
-    だから <code>sw $ra, 4($sp)</code> は「$sp が指す場所の 4 バイト先」と読む。</div>
-    <h3>手で触る：配列 A[i] の番地（A の先頭アドレスが $s3 = 0x4000, 要素は4バイト）</h3>
-    <div id="arr"></div>
-    <div class="sub" id="arrSay"></div>
-  </section>
-
-  <section class="card" id="s5">
-    <h2><span class="n">5</span>比較と分岐：if を作る <span class="pdf">p.97-99</span></h2>
-    <p>MIPS に「<code>if (a &lt; b) goto L</code>」という1命令は無い。<b>2命令に分ける</b>：</p>
-<pre>slti $t0, $a0, 1        <span class="c"># $a0 &lt; 1 なら $t0 = 1、そうでなければ 0</span>
-beq  $t0, $zero, L1     <span class="c"># $t0 == 0 なら L1 へ分岐</span></pre>
-    <ul>
-      <li><code>slt</code> 系は結果を<b>0/1としてレジスタに入れる</b>（真=1、偽=0）。</li>
-      <li><code>beq</code>/<code>bne</code> は「2つのレジスタが等しい／等しくない」だけ判定する。<code>$zero</code> と比べれば「0か否か」。</li>
-      <li>なぜ <code>blt</code> が無い？ ハードウェアで「大小比較」は「等しいか」より遅く、クロックを上げにくいから（p.98）。よく使う == と != だけ速くする設計の妥協。</li>
-    </ul>
-    <div class="box warn"><b>fact で一番ひっくり返りやすい所</b>：<code>beq $t0,$zero,L1</code> は <code>$t0==0</code> のとき L1 へ飛ぶ。<br>
-    $t0 は「n&lt;1 なら 1」だったので、<b>$t0==0 ＝ n≧1（偽）</b>。つまり n≧1 のとき L1（else側・再帰）へ飛び、n&lt;1 のときは飛ばず下の「結果は1」に落ちる。C の <code>if (n&lt;1)</code> と<b>分岐の向きが逆</b>に見えるのはこのため。</div>
-    <table>
-      <tr><th>n</th><th>slti → $t0</th><th>beq $t0==0 ?</th><th>行き先</th></tr>
-      <tr><td>0</td><td>1 (0&lt;1 真)</td><td>いいえ</td><td>下へ落ちる → 結果 1（基底ケース）</td></tr>
-      <tr><td>3</td><td>0 (3&lt;1 偽)</td><td>はい</td><td>L1 へ → 再帰</td></tr>
-    </table>
-    <p><b>符号付き vs 符号なし</b>（p.98-99）：<code>slt</code> は符号付き、<code>sltu</code> は符号なし。全bitが1の値は、符号付きでは -1、符号なしでは 4294967295。同じ32bitでも読み方で大小が変わる。</p>
-  </section>
-
-  <section class="card" id="s6">
-    <h2><span class="n">6</span>PC とジャンプ：jal と jr <span class="pdf">p.117-121</span></h2>
-    <p><b>PC（プログラムカウンタ）＝次に実行する命令のアドレス</b>。命令は4バイトなので、通常は毎回 <code>PC ← PC + 4</code>。これを書き換える命令だけが「飛ぶ」：</p>
-    <table>
-      <tr><th>命令</th><th>PC がどうなるか</th></tr>
-      <tr><td><code>beq / bne</code></td><td>成立時だけ <code>PC+4 + オフセット×4</code>（近くへ）</td></tr>
-      <tr><td><code>j L</code></td><td>L へ（26bit のアドレス部 ×4 で遠くへ）</td></tr>
-      <tr><td><code>jal L</code></td><td><b>$ra ← PC+8</b>（戻り先を記録）してから L へ。<br><span class="sub">実機では jal の次の1命令（遅延スロット、通常 nop）も先に実行される設計なので、その次＝PC+8 に戻る（PC+4 と書く教科書の簡略説明もある）</span></td></tr>
-      <tr><td><code>jr $ra</code></td><td>PC ← <b>$ra の中身</b>（記録しておいた戻り先へ）</td></tr>
-    </table>
-    <div class="box">jal の <b>l</b>ink ＝「戻り先を結びつけて残す」。<code>jal</code> と <code>jr $ra</code> は<b>ワンセット</b>：呼ぶとき jal が帰り道を $ra に置き、終わるとき jr が $ra の道を辿る。<br>
-    分岐オフセットも ×4 される理由：命令は4バイト境界にしか無いので、下位2bitは常に00。省いた分、16bitで ±3万命令先まで届く（p.120）。</div>
-  </section>
-
-  <section class="card" id="s7">
-    <h2><span class="n">7</span>手続き（関数）：呼ぶ側と呼ばれる側の約束 <span class="pdf">p.100-103 / スライド12-17</span></h2>
-    <p>手続きを呼ぶ手順（p.100）：①引数を置く → ②制御を移す → ③必要なメモリを確保 → ④仕事 → ⑤結果を置く → ⑥元に戻る。誰がどこに置くかは<b>レジスタ利用規約</b>で決まっている：</p>
-    <table>
-      <tr><th>レジスタ</th><th>役割</th><th>約束</th></tr>
-      <tr><td><code>$a0–$a3</code> (4–7)</td><td>引数</td><td>呼ぶ側が置く</td></tr>
-      <tr><td><code>$v0,$v1</code> (2,3)</td><td>結果</td><td>呼ばれた側が置く</td></tr>
-      <tr><td><code>$t0–$t9</code></td><td>一時用</td><td>呼ばれた側は<b>勝手に壊してよい</b></td></tr>
-      <tr><td><code>$s0–$s7</code></td><td>保存用</td><td>使うなら呼ばれた側が<b>保存→復元</b>（返すとき元通りに）</td></tr>
-      <tr><td><code>$sp</code> (29)</td><td>スタックの先頭</td><td>出るときは入る前の値に戻す</td></tr>
-      <tr><td><code>$ra</code> (31)</td><td>戻りアドレス</td><td>jal が上書きする</td></tr>
-    </table>
-    <h3>踏み台：他の手続きを呼ばない例（leaf）<span class="sub">C: <code>f = g + h - i + j</code></span></h3>
-<pre>leaf_example:               <span class="c"># g,h,i,j = $a0..$a3</span>
-  addi $sp, $sp, -4         <span class="c"># 1語ぶん枠を確保</span>
-  sw   $s0, 0($sp)          <span class="c"># $s0 を使うので退避（保存用だから）</span>
-  add  $t0, $a0, $a1        <span class="c"># g+h   ($t は壊してよいので保存不要)</span>
-  add  $t1, $a2, $a3        <span class="c"># i+j</span>
-  sub  $s0, $t0, $t1        <span class="c"># f = ...</span>
-  add  $v0, $s0, $zero      <span class="c"># 結果を $v0 へ</span>
-  lw   $s0, 0($sp)          <span class="c"># $s0 を元に戻す</span>
-  addi $sp, $sp, 4          <span class="c"># 枠を解放</span>
-  jr   $ra                  <span class="c"># 戻る</span></pre>
-    <div class="box ok">fact と同じ型：<b>①枠を確保 → ②退避 → ③仕事 → ④復元 → ⑤枠を解放 → ⑥jr</b>。leaf は他を呼ばないので <code>$ra</code> を退避する必要が無い（jal で上書きされないから）。次の段は、その必要が生まれる場面。</div>
-  </section>
-
-  <section class="card" id="s8">
-    <h2><span class="n">8</span>スタック：自分用の机を借りる <span class="pdf">p.103-107 / スライド21-22</span></h2>
-    <ul>
-      <li>メモリの一角を<b>後入れ先出し（LIFO）</b>で使う領域。<b>アドレスの大きい方から小さい方へ伸びる</b>（下向き）。</li>
-      <li><code>$sp</code> は「いま積まれている一番上（＝アドレスが一番小さい）」を指す。</li>
-      <li>MIPS に push/pop 命令は無い。自分で書く：
-<pre>push 1語:  addi $sp,$sp,-4   →  sw $x,0($sp)
-pop  1語:  lw   $x,0($sp)    →  addi $sp,$sp,4</pre></li>
-      <li><b>確保＝ $sp を減らす、解放＝ $sp を増やす</b>。解放しても中身は消えない（上書きされるまで残る）。ただし「$sp より下」は使用済みとして扱うので、そこを読んではいけない。</li>
-    </ul>
-    <p>fact は1回の呼び出しごとに 2語（$ra と $a0）の枠を取る。<b>呼び出しごとに別の枠</b>ができるから、再帰の各段が自分の $a0・$ra を別々に持てる。</p>
-  </section>
-
-  <section class="card" id="s9">
-    <h2><span class="n">9</span>なぜ退避が要る？：入れ子の呼び出し <span class="pdf">p.104-106 / スライド18-20</span></h2>
-    <p>main が <code>A</code> を呼び、<code>A</code> がさらに <code>B</code> を呼ぶ場面。<b>$ra は1個しかない</b>ので、A が jal B をすると main への帰り道が上書きされる。切り替えて確かめる。</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
-      <button id="mNo" class="on">退避しない</button><button id="mYes">$ra を退避する</button>
-      <span style="flex:1"></span>
-      <button id="rBack">◀</button><button id="rNext">次へ ▶</button><button id="rReset">↺</button>
+  <header>
+    <div>
+      <h1 id="title"></h1>
+      <div class="sub" id="subtitle"></div>
     </div>
-    <div class="st">
-      <pre id="rcode"></pre>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="card ctlbar">
+        <div class="say" style="margin-top:0"><div class="ico">💡</div><div id="say"></div></div>
+        <div class="bar-progress"><i id="prog"></i></div>
+        <div class="ctrl">
+          <button id="bBack">◀ 戻る</button>
+          <button id="bPlay" class="primary">▶ 再生</button>
+          <button id="bStep">1ステップ ▶</button>
+          <button id="bReset">↺ リセット</button>
+          <button id="bNew">⤮ 別のデータ</button>
+          <label class="sub" style="display:flex;gap:8px;align-items:center;flex:1;min-width:200px">速度
+            <input id="speed" type="range" min="1" max="10" value="5"><span id="speedLabel">1.0x</span></label>
+        </div>
+        <div class="sub" style="margin-top:4px;font-size:.72rem">ショートカット: Space=再生/停止　←/→=1ステップ戻る/進む</div>
+  </section>
+  <div class="pair">
+      <section class="card codecard">
+        <h2>🧩 擬似コード <span class="sub">（いま実行中の行が光る）</span></h2>
+        <div class="code" id="code"></div>
+      </section>
+  <section class="card">
+    <h2>📋 実行トレース表（課題シートと同じ向き：列 = サイクル） <span class="sub">値は「その命令を実行した後」。赤＝そのサイクルで変化、黄＝next PC が +4 でない（⤴）</span></h2>
+    <div class="tw"><table id="ttbl"></table></div>
+    <h3>スタック <span class="sub">（灰色 = 使われていない領域。薄字は解放済みで残っている古い値）</span></h3>
+    <div class="tw"><table id="stbl"></table></div>
+  </section>
+  </div>
+  <div class="grid" style="margin-top:16px">
+    <!-- 左: 可視化 + 説明 + 操作 -->
+    <div class="col">
+      <section class="card">
+        <div class="legend" id="legend"></div>
+        <div id="view"></div>
+      </section>
+    </div>
+
+    <!-- 右: コード + 変数 + 解説 -->
+    <div class="col">
+      <section class="card">
+        <h2>🔢 この命令の32bit（機械語） <span class="sub">（命令もレジスタと同じ1語=32bit）</span></h2>
+        <div id="fields"></div>
+      </section>
+      <section class="card">
+        <h2>👀 レジスタの中身（命令の実行後）</h2>
+        <div class="vars" id="vars"></div>
+        <div class="sub" style="margin-top:8px" id="statline"></div>
+      </section>
+      <section class="card">
+        <h2 id="noteTitle">読み方のポイント</h2>
+        <ul class="notes" id="notes"></ul>
+      </section>
+    </div>
+  </div>
+  <section class="card" style="margin-top:16px">
+    <h2>📖 32bit の役割早見表</h2>
+    <div class="two">
       <div>
-        <div class="regs" id="rregs"></div>
-        <div class="sub" style="margin-top:8px">スタック（$sp が指す語）：<span id="rstk"></span></div>
-        <div id="rsay" style="margin-top:10px;min-height:3.2em"></div>
-        <div id="rver" class="verdict"></div>
+        <h3>① レジスタ（32個 × 各32bit）— 番号と名前と役割</h3>
+        <table class="ref"><thead><tr><th>番号</th><th>名前</th><th>役割</th><th>fact で</th></tr></thead><tbody>
+          <tr><td>0</td><td>$zero</td><td>常に 0（書いても変わらない）</td><td class="u">定数1を作るのに使用</td></tr>
+          <tr><td>2–3</td><td>$v0–$v1</td><td>関数の<b>戻り値</b></td><td class="u">$v0 に n! を入れて返す</td></tr>
+          <tr><td>4–7</td><td>$a0–$a3</td><td>関数の<b>引数</b></td><td class="u">$a0 = n</td></tr>
+          <tr><td>8–15</td><td>$t0–$t7</td><td>一時用。呼ばれた側は<b>壊してよい</b></td><td class="u">$t0 = (n&lt;1) の判定結果</td></tr>
+          <tr><td>16–23</td><td>$s0–$s7</td><td>保存用。壊したら<b>戻す責任</b>がある</td><td>使っていない</td></tr>
+          <tr><td>24–25</td><td>$t8–$t9</td><td>一時用（続き）</td><td>使っていない</td></tr>
+          <tr><td>28</td><td>$gp</td><td>グローバル領域へのポインタ</td><td>使っていない</td></tr>
+          <tr><td>29</td><td>$sp</td><td><b>スタックの先頭</b>のアドレス（下向きに伸びる）</td><td class="u">枠の確保・解放</td></tr>
+          <tr><td>30</td><td>$fp</td><td>フレームポインタ</td><td>使っていない</td></tr>
+          <tr><td>31</td><td>$ra</td><td><b>戻り先アドレス</b>（jal が自動で書く）</td><td class="u">jr $ra で戻る</td></tr>
+        </tbody></table>
+        <p class="sub">命令の rs/rt/rd フィールドに入っているのは、この「番号」（5bit で 0〜31）。名前は人間用の呼び方。</p>
+      </div>
+      <div>
+        <h3>② 命令語 32bit の3つの型</h3>
+        <div class="fmtbox"><b>R形式</b>（レジスタ同士：add, mul, jr…）
+          <div class="fldrow"><div class="fld f-op" style="flex:6"><small>op 6</small>種類(=0)</div><div class="fld f-rs" style="flex:5"><small>rs 5</small>元1</div><div class="fld f-rt" style="flex:5"><small>rt 5</small>元2</div><div class="fld f-rd" style="flex:5"><small>rd 5</small>書込み先</div><div class="fld f-shamt" style="flex:5"><small>shamt 5</small>シフト量</div><div class="fld f-funct" style="flex:6"><small>funct 6</small>演算の種類</div></div></div>
+        <div class="fmtbox"><b>I形式</b>（即値・メモリ・分岐：addi, lw, sw, beq, slti）
+          <div class="fldrow"><div class="fld f-op" style="flex:6"><small>op 6</small>命令の種類</div><div class="fld f-rs" style="flex:5"><small>rs 5</small>元 / ベース</div><div class="fld f-rt" style="flex:5"><small>rt 5</small>書込み先 or 保存する値</div><div class="fld f-imm" style="flex:16"><small>imm 16</small>即値 / オフセット / 分岐距離（符号つき）</div></div></div>
+        <div class="fmtbox"><b>J形式</b>（ジャンプ：jal, j）
+          <div class="fldrow"><div class="fld f-op" style="flex:6"><small>op 6</small>種類</div><div class="fld f-addr" style="flex:26"><small>addr 26</small>飛び先アドレス ÷ 4</div></div></div>
+        <ul class="fnotes">
+          <li><b>rt の意味は型で変わる</b>：I形式の addi/lw/slti では「書き込み先」、sw/beq では「読む側」。R形式では rd が書き込み先。</li>
+          <li><b>imm が 16bit しかない</b>から、定数は ±3万程度、分岐は ±3万命令まで。jal は 26bit ぶん遠くへ飛べる。</li>
+          <li><b>全命令が同じ 32bit 幅</b>だから、次の命令は PC+4 と決まる（PC と next PC の差）。</li>
+        </ul>
       </div>
     </div>
-    <div class="box"><b>fact はこれが「A が fact 自身」になったもの</b>。fact(3) が fact(2) を呼ぶと、$ra が上書きされる。だから最初に <code>sw $ra,4($sp)</code> で逃がす。
-    $a0 も同じ理由：呼ぶ前に <code>addi $a0,$a0,-1</code> で n を書き換えるので、戻ってから掛け算に使う<b>元の n</b>はスタックから取り戻す。</div>
-    <p><b>基底ケース</b>（n&lt;1）は jal をしないので $ra は無傷。枠を捨てて <code>jr $ra</code> だけで正しく戻れる（$ra を lw で戻す命令が無いのはそのため）。</p>
   </section>
-
-  <section class="card" id="s10">
-    <h2><span class="n">10</span>確認問題（答えは開いて確認）</h2>
-    <details><summary>Q1. <code>lw $a0, 8($s3)</code>、$s3 = 0x4000 のとき、どのアドレスの語を読む？</summary>0x4000 + 8 = <b>0x4008</b>。オフセット 8 は命令の imm にある定数。</details>
-    <details><summary>Q2. n = 0 のとき、<code>beq $t0,$zero,L1</code> は飛ぶ？</summary>$t0 = (0&lt;1) = 1。1 ≠ 0 なので<b>飛ばない</b>。下に落ちて「結果は 1」。</details>
-    <details><summary>Q3. <code>jal fact</code> は $ra に何を入れる？</summary><b>PC+8</b>（jal の次の遅延スロット nop を飛ばした先）。fact では <code>lw $a0, 0($sp)</code> の行。課題シートはこの設定。</details>
-    <details><summary>Q4. 退避の <code>sw $ra,4($sp)</code> を忘れたらどうなる？</summary>fact が fact を呼んだ時点で $ra が内側の戻り先に上書きされ、外側の呼び出しが main に戻れず、同じ場所をぐるぐる回る（§9 の「退避しない」）。</details>
-    <details><summary>Q5. <code>jr $ra</code> の機械語は R形式、<code>jal</code> は J形式。なぜ形式が違う？</summary>jr は「レジスタ（rs=31）の中身へ飛ぶ」ので<b>レジスタ番号</b>を持てばよく R形式。jal は「命令に書かれた固定の飛び先」なので<b>26bit のアドレス</b>を持つ J形式。</details>
-    <details><summary>Q6. 基底ケースの <code>addi $sp,$sp,8</code> は、n=0 で何をしている？</summary>入口で <code>-8</code> して確保した2語の枠をそのまま解放している。中の $ra・$a0 は書き込んだが読まない（$ra は無傷なので復元不要）。</details>
-    <details><summary>Q7. fact(3) の <code>mul</code> は何回実行され、いつ？</summary>fact(3), fact(2), fact(1) の<b>3回</b>（fact(0) は基底ケースで mul に到達しない）。いずれも<b>戻ってきてから</b>。順に 1×1=1 → 2×1=2 → 3×2=6。</details>
-  </section>
-  <div class="sub">戻る：<a href="mips/fact-walkthrough.html">fact を1命令ずつ追う</a></div>
-</main>
+  <footer id="foot"></footer>
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
-
-/* ---- §4 配列アドレス ---- */
-let ai = 2;
-function drawArr(){
-  const base = 0x4000;
-  $('arr').innerHTML =
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">` +
-    [0,1,2,3].map(i=>`<button class="${i===ai?'on':''}" onclick="ai=${i};drawArr()">A[${i}]</button>`).join('') + `</div>` +
-    `<div class="mem">` + [0,1,2,3].map(i=>`<div class="cell ${i===ai?'hit':''}"><small>0x${(base+4*i).toString(16)}</small>A[${i}]</div>`).join('') + `</div>`;
-  $('arrSay').innerHTML = `<code>lw $t0, ${4*ai}($s3)</code> → アドレス = 0x4000 + <b>${4*ai}</b> = <b>0x${(base+4*ai).toString(16)}</b>（オフセット = 4 × ${ai}。要素が4バイトだから）`;
-}
-drawArr();
-
-/* ---- §9 $ra 退避ステッパ ---- */
-const S = {
- no: {
-  code:[
-   ['main','0x400','jal  A'],
-   ['A','0x504','jal  B'],
-   ['A','0x508','jr   $ra'],
-   ['B','0x600','jr   $ra'],
+/* ★1 META */
+const META = {
+  title: 'MIPS 再帰 fact(n)（課題シート準拠）',
+  subtitle: '確認テスト⑦のシートと同じ設定（PC=0x80030000 / $sp=0xBFFFEE00 / jal の次に nop・$ra=PC+8）で1命令ずつ追う',
+  chips: ['n! = n × (n-1)!', '1語 = 32bit = 4バイト', '「別のデータ」で n を切替（0,1,2,3,5。最初は n=5）'],
+  legend: [['--compare','読んだ (lw)'],['--change','書いた (sw)'],['--idle','使用中の枠'],['--muted','解放済み(古い値が残るだけ)']],
+  noteTitle: '読み方のポイント',
+  notes: [
+    '<b>$ra の退避</b>：jal は $ra を「戻り先」で上書きする。最初に $ra をスタックへ逃がしておかないと、再帰から戻る道が分からなくなる。',
+    '<b>$a0 の退避</b>：L1 で $a0 を n-1 に書き換えてから呼ぶので、元の n は戻ってから lw で取り戻す（mul で使う）。',
+    '<b>基底ケース（n&lt;1）は $ra を lw で戻していない</b>：その呼び出しの中では jal をしていないので $ra は無傷。だから sp を戻して jr $ra だけで足りる。',
+    '<b>掛け算は「戻るとき」</b>：mul は jal の後ろにある。潜る間は何も掛けず、戻りながら 1 → 1×1 → 2×1 → 3×2 → 4×6 → 5×24 と膨らむ（n=5 のとき）。',
+    '<b>jal の次の nop と $ra = PC+8</b>：実機の MIPS は jal の次の1命令（遅延スロット）も先に実行する設計。そこへ戻ると二重になるので、戻り先は <b>PC+8</b>（nop の次）。このシートでは nop は実行されず飛ばされる（next PC が直接 fact になる）。',
+    '<b>PC と next PC</b>：普通は PC+4。beq（成立時）・jal・jr のときだけ飛ぶ（黄色 ⤴）。',
+    '<b>解放済みの値は消えない</b>：addi $sp,$sp,8 は $sp を動かすだけ。灰色の行に古い値が残るのが見える。',
   ],
-  steps:[
-   {i:-1,ra:'—',stk:'—',pc:'0x400',say:'開始。main が jal A を実行しようとしている。'},
-   {i:0, ra:'0x404',stk:'—',pc:'0x504',say:'jal A：$ra ← 0x404（main の続き）。A へ。'},
-   {i:1, ra:'0x508',stk:'—',pc:'0x600',say:'A が jal B：$ra ← 0x508。<b>さっきの 0x404 は上書きされて消えた</b>。'},
-   {i:3, ra:'0x508',stk:'—',pc:'0x508',say:'B の jr $ra：0x508（A の続き）へ戻る。ここまでは正しい。'},
-   {i:2, ra:'0x508',stk:'—',pc:'0x508',say:'A の jr $ra：$ra はまだ 0x508。<b>また A の続きへ飛ぶ</b>。main の 0x404 はもう分からない。',bad:1},
-  ],
-  verdict:['bad','✗ main に戻れず、同じ場所をぐるぐる回る（無限ループ）']},
- yes: {
-  code:[
-   ['main','0x400','jal  A'],
-   ['A','0x500','sw   $ra, 0($sp)'],
-   ['A','0x504','jal  B'],
-   ['A','0x508','lw   $ra, 0($sp)'],
-   ['A','0x50c','jr   $ra'],
-   ['B','0x600','jr   $ra'],
-  ],
-  steps:[
-   {i:-1,ra:'—',stk:'—',pc:'0x400',say:'開始。main が jal A を実行しようとしている。'},
-   {i:0, ra:'0x404',stk:'—',pc:'0x500',say:'jal A：$ra ← 0x404。A へ。'},
-   {i:1, ra:'0x404',stk:'0x404',pc:'0x504',say:'<b>A が最初に $ra をスタックへ退避</b>。0x404 がメモリに避難した。'},
-   {i:2, ra:'0x508',stk:'0x404',pc:'0x600',say:'A が jal B：$ra ← 0x508 に上書き。でも 0x404 はスタックに無事。'},
-   {i:5, ra:'0x508',stk:'0x404',pc:'0x508',say:'B の jr $ra：A の続きへ戻る。'},
-   {i:3, ra:'0x404',stk:'0x404',pc:'0x50c',say:'<b>lw で $ra を復元</b>。0x404 が $ra に戻った。'},
-   {i:4, ra:'0x404',stk:'0x404',pc:'0x404',say:'A の jr $ra：main の続き（0x404）へ。',ok:1},
-  ],
-  verdict:['ok','✓ 正しく main に戻れる']},
+  foot: 'Generated by Claude Code — code-walkthrough（実際に命令を解釈実行して作ったトレース）',
 };
-let mode='no', rk=0;
-function drawR(){
-  const m=S[mode], st=m.steps[rk];
-  $('rcode').innerHTML = m.code.map((c,k)=>
-    `<div style="${k===st.i?'background:var(--accent-soft);border-left:4px solid var(--accent);font-weight:700;':'border-left:4px solid transparent;'}padding-left:6px">${c[0].padEnd(5)} ${c[1]}  ${c[2]}</div>`).join('');
-  $('rregs').innerHTML = `<span>$ra = <b>${st.ra}</b></span><span>次の PC = <b>${st.pc}</b></span>`;
-  $('rstk').textContent = st.stk;
-  $('rsay').innerHTML = `<span class="sub">ステップ ${rk}/${m.steps.length-1}</span><br>${st.say}`;
-  $('rver').className='verdict ' + (rk===m.steps.length-1 ? m.verdict[0] : '');
-  $('rver').textContent = rk===m.steps.length-1 ? m.verdict[1] : '';
-  $('mNo').className = mode==='no'?'on':''; $('mYes').className = mode==='yes'?'on':'';
+
+/* ★2 CODE（no = 課題シートの命令No） */
+const CODE = [
+  { id:'m1',  no:1,  indent:0, text:'main: addi $a0, $zero, n' },
+  { id:'m2',  no:2,  indent:1, text:'jal  fact' },
+  { id:'m3',  no:3,  indent:1, text:'nop            # 遅延スロット（飛ばされる）' },
+  { id:'l0',  no:'', indent:0, text:'fact:' },
+  { id:'l1',  no:5,  indent:1, text:'addi $sp, $sp, -8' },
+  { id:'l2',  no:6,  indent:1, text:'sw   $ra, 4($sp)' },
+  { id:'l3',  no:7,  indent:1, text:'sw   $a0, 0($sp)' },
+  { id:'l4',  no:8,  indent:1, text:'slti $t0, $a0, 1' },
+  { id:'l5',  no:9,  indent:1, text:'beq  $t0, $zero, L1' },
+  { id:'l6',  no:10, indent:1, text:'addi $v0, $zero, 1' },
+  { id:'l7',  no:11, indent:1, text:'addi $sp, $sp, 8' },
+  { id:'l8',  no:12, indent:1, text:'jr   $ra' },
+  { id:'l9',  no:13, indent:0, text:'L1: addi $a0, $a0, -1' },
+  { id:'l10', no:14, indent:1, text:'jal  fact' },
+  { id:'l10n',no:15, indent:1, text:'nop            # 遅延スロット（飛ばされる）' },
+  { id:'l11', no:16, indent:1, text:'lw   $a0, 0($sp)' },
+  { id:'l12', no:17, indent:1, text:'lw   $ra, 4($sp)' },
+  { id:'l13', no:18, indent:1, text:'addi $sp, $sp, 8' },
+  { id:'l14', no:19, indent:1, text:'mul  $v0, $a0, $v0' },
+  { id:'l15', no:20, indent:1, text:'jr   $ra' },
+];
+
+/* ★3 trace — 本物の MIPS 命令を解釈実行しながら rec() */
+const SP0 = 0xBFFFEE00, BASE = 0x80030000, MAIN_RA = BASE + 12;   // main の jal(0x80030004) の PC+8
+const NO = k => k<=10 ? k+4 : k+5;             // fact 内の番号 k(1..15) → シートの命令No
+const addrOf = k => BASE + 4*(NO(k)-1);
+const kOf = a => { for(let k=1;k<=15;k++) if(addrOf(k)===a) return k; };
+const FACT26 = (addrOf(1)>>>2) & 0x3FFFFFF;     // fact のアドレス÷4 の下位26bit
+const NS = [0,1,2,3,5];
+let curI = 3;   // 最初の makeInput() が 5 を返す
+function makeInput(){ curI = (curI+1)%NS.length; return NS[curI]; }   // 5,0,1,2,3,5,0…
+const hx = x => x===null ? 'U' : (x>>>0).toString(16).toUpperCase().padStart(8,'0');
+const hex8 = x => x===null ? 'U' : '0x'+hx(x);
+const raStr = r => r===null ? 'U' : hex8(r) + (r===MAIN_RA ? '（main）' : '');
+const val = x => x===null ? 'U' : x;
+
+/* --- 機械語：フィールドから 32bit を組み立てる --- */
+const F = (n,bits,v,note) => ({n,bits,v,note});
+const enc = fs => fs.reduce((acc,f)=> acc*2**f.bits + (f.v & (2**f.bits-1)), 0) >>> 0;
+const Ifmt = (op,rs,rt,imm,notes) => [F('op',6,op,notes.op),F('rs',5,rs,notes.rs),F('rt',5,rt,notes.rt),F('imm',16,imm,notes.imm)];
+const JNOTE = 'fact のアドレス 0x80030010 ÷ 4 の下位26bit = 0x00C004。上位4bit(8)は PC の上位4bitをそのまま使う。同時に $ra ← PC+8';
+const SPEC = {
+  1:  {fmt:'I', f:Ifmt(8,29,29,-8,{op:'8 = addi（即値を足す）',rs:'29 = $sp　足される元',rt:'29 = $sp　結果の書き込み先（I形式の rt は多くの場合「書き込み先」）',imm:'-8　16bitの2の補数（0xFFF8）。符号拡張されて -8'})},
+  2:  {fmt:'I', f:Ifmt(43,29,31,4,{op:'43 = sw（レジスタ→メモリ）',rs:'29 = $sp　ベースアドレス',rt:'31 = $ra　メモリへ書く値が入っているレジスタ',imm:'4　オフセット。書込み先 = $sp + 4'})},
+  3:  {fmt:'I', f:Ifmt(43,29,4,0,{op:'43 = sw',rs:'29 = $sp　ベースアドレス',rt:'4 = $a0　メモリへ書く値',imm:'0　書込み先 = $sp + 0'})},
+  4:  {fmt:'I', f:Ifmt(10,4,8,1,{op:'10 = slti（即値と比べて小さければ1）',rs:'4 = $a0　比較の左辺',rt:'8 = $t0　結果(0/1)の書き込み先',imm:'1　比較の右辺。$a0 < 1 なら $t0=1'})},
+  5:  {fmt:'I', f:Ifmt(4,8,0,3,{op:'4 = beq（等しければ分岐）',rs:'8 = $t0　比べる1つ目',rt:'0 = $zero　比べる2つ目（常に0）',imm:'3　分岐先 = (PC+4) + 3×4。「次の命令から3命令先」＝ L1（命令No13）'})},
+  6:  {fmt:'I', f:Ifmt(8,0,2,1,{op:'8 = addi',rs:'0 = $zero　常に0 → 0+1 で定数1を作る（li の代用）',rt:'2 = $v0　結果の書き込み先',imm:'1'})},
+  7:  {fmt:'I', f:Ifmt(8,29,29,8,{op:'8 = addi',rs:'29 = $sp',rt:'29 = $sp',imm:'8　スタック枠の解放（pop）'})},
+  8:  {fmt:'R', f:[F('op',6,0,'0 = R形式。本体は funct 側'),F('rs',5,31,'31 = $ra　飛び先アドレスが入っているレジスタ'),F('rt',5,0,'0　未使用'),F('rd',5,0,'0　未使用'),F('shamt',5,0,'0　未使用'),F('funct',6,8,'8 = jr（レジスタの値へジャンプ）')]},
+  9:  {fmt:'I', f:Ifmt(8,4,4,-1,{op:'8 = addi',rs:'4 = $a0',rt:'4 = $a0　自分自身を更新',imm:'-1　n を 1 減らす'})},
+  10: {fmt:'J', f:[F('op',6,3,'3 = jal（ジャンプして $ra に戻り先を保存）'),F('addr',26,FACT26,JNOTE)]},
+  11: {fmt:'I', f:Ifmt(35,29,4,0,{op:'35 = lw（メモリ→レジスタ）',rs:'29 = $sp　ベースアドレス',rt:'4 = $a0　読んだ値の書き込み先',imm:'0　読み出し元 = $sp + 0'})},
+  12: {fmt:'I', f:Ifmt(35,29,31,4,{op:'35 = lw',rs:'29 = $sp',rt:'31 = $ra　読んだ値の書き込み先',imm:'4　読み出し元 = $sp + 4'})},
+  13: {fmt:'I', f:Ifmt(8,29,29,8,{op:'8 = addi',rs:'29 = $sp',rt:'29 = $sp',imm:'8　枠の解放'})},
+  14: {fmt:'R', f:[F('op',6,0x1c,'0x1C = SPECIAL2（MIPS32 の mul はここに属する）'),F('rs',5,4,'4 = $a0　掛ける1つ目'),F('rt',5,2,'2 = $v0　掛ける2つ目'),F('rd',5,2,'2 = $v0　結果の書き込み先（R形式の rd は書き込み先）'),F('shamt',5,0,'0　未使用'),F('funct',6,2,'2 = mul')]},
+  15: {fmt:'R', f:[F('op',6,0,'0 = R形式'),F('rs',5,31,'31 = $ra'),F('rt',5,0,'0'),F('rd',5,0,'0'),F('shamt',5,0,'0'),F('funct',6,8,'8 = jr')]},
+};
+const MC = {}; for(const k in SPEC) MC[k] = enc(SPEC[k].f);
+const MN = {1:'addi $sp, $sp, -8',2:'sw $ra, 4($sp)',3:'sw $a0, 0($sp)',4:'slti $t0, $a0, 1',5:'beq $t0, $zero, L1',
+  6:'addi $v0, $zero, 1',7:'addi $sp, $sp, 8',8:'jr $ra',9:'addi $a0, $a0, -1',10:'jal fact',
+  11:'lw $a0, 0($sp)',12:'lw $ra, 4($sp)',13:'addi $sp, $sp, 8',14:'mul $v0, $a0, $v0',15:'jr $ra',
+  m2:'jal fact'};
+SPEC.m2 = {fmt:'J', f:[F('op',6,3,'3 = jal'),F('addr',26,FACT26,JNOTE)]};
+MC.m2 = enc(SPEC.m2.f);
+let TROWS = [];
+
+function trace(n){
+  const steps = [];
+  TROWS = [];
+  SPEC.m1 = {fmt:'I', f:Ifmt(8,0,4,n,{op:'8 = addi',rs:'0 = $zero　常に0 → 0+n で定数 n を作る',rt:'4 = $a0　引数レジスタ（結果の書き込み先）',imm:n+'　引数 n'})};
+  MC.m1 = enc(SPEC.m1.f); MN.m1 = `addi $a0, $zero, ${n}`;
+  const R = { sp:SP0, ra:null, a0:null, t0:null, v0:null };
+  const mem = new Map();                       // addr -> {v(表示), raw, label}
+  const calls = [];
+  let count = 0, hiR = null, hiW = null, cur = null, done = false;
+  const rows = 2*(n+1);
+  const snap = () => { const o=[]; for(let q=1;q<=rows;q++){ const a=SP0-4*q;
+      o.push(a>=R.sp ? [1, mem.has(a)?mem.get(a).v:'U'] : [0, mem.has(a)?mem.get(a).v:null]); } return o; };
+  const rec = (line, desc) => steps.push({
+    line, desc, k: TROWS.length, cur,
+    vars: { '$sp':hex8(R.sp), '$ra':raStr(R.ra), '$a0':val(R.a0), '$t0':val(R.t0), '$v0':val(R.v0) },
+    sp: R.sp, rows, mem: [...mem].map(([a,m])=>[a,{...m}]),
+    calls: [...calls], read: hiR, write: hiW,
+    stats: { 実行した命令: count, '呼び出しの深さ': calls.length },
+  });
+  const me = () => calls[calls.length-1];
+  const row = (key,no,pc,npc) => TROWS.push({ cyc:count, id:(typeof key==='number'?'l'+key:key), no, mn:MN[key], mc:MC[key], pc, npc,
+      a0:R.a0, t0:R.t0, v0:R.v0, sp:R.sp, ra:R.ra, stk:snap() });
+
+  rec('start', `開始前。レジスタは未定義(U)、$sp=${hex8(SP0)}。main の1命令目（命令No1）から。`);
+  /* main の2命令 */
+  count++; R.a0 = n; cur = 'm1';
+  row('m1', 1, BASE, BASE+4);
+  rec('m1', `main：引数 n=${n} を $a0 に入れる（$zero + ${n}）。`);
+  count++; R.ra = BASE+4+8; calls.push('fact('+n+')'); cur = 'm2';
+  row('m2', 2, BASE+4, addrOf(1));
+  rec('m2', `jal fact：$ra ← PC+8 = ${hex8(R.ra)}（命令No3 の nop を飛ばした次＝No4）。fact(${n}) の実行開始。nop は実行されず next PC は直接 fact（${hex8(addrOf(1))}）。`);
+
+  let pc = 1;
+  while(!done){
+    const k = pc, line = 'l'+k; hiR = hiW = null; count++;
+    let d = '', npc;
+    switch(k){
+      case 1: { const o=R.sp; R.sp-=8; mem.delete(R.sp); mem.delete(R.sp+4);
+        d=`スタックは下向きに伸びる。$sp を 8 減らして 2語分の枠を確保（中身は未定義 U）。$sp: ${hex8(o)} → ${hex8(R.sp)}`; pc=2; break; }
+      case 2: { const a=R.sp+4; mem.set(a,{v:hx(R.ra),raw:R.ra,label:`${me()} の $ra`}); hiW=a;
+        d=`戻り先 ${raStr(R.ra)} を ${hex8(a)} (=4($sp)) に退避。この後の jal が $ra を上書きするため。`; pc=3; break; }
+      case 3: { const a=R.sp; mem.set(a,{v:String(R.a0),raw:R.a0,label:`${me()} の $a0`}); hiW=a;
+        d=`引数 n=${R.a0} を ${hex8(a)} (=0($sp)) に退避。この後 $a0 を書き換えるため。`; pc=4; break; }
+      case 4: { R.t0 = R.a0<1?1:0; d=`n=${R.a0} < 1 ? → ${R.t0?'成立':'不成立'}。$t0=${R.t0}`; pc=5; break; }
+      case 5: { const take = R.t0===0; d = take
+        ? `$t0=0（n≧1）→ L1（命令No13）へジャンプ。再帰する側へ。` : `$t0=1（n<1）→ 分岐せず次へ。基底ケース：結果は 1。`;
+        pc = take?9:6; break; }
+      case 6: { R.v0=1; d=`基底ケース。結果 $v0 = 1。`; pc=7; break; }
+      case 7: { const o=R.sp; R.sp+=8; d=`枠を解放：$sp を 8 戻す（${hex8(o)} → ${hex8(R.sp)}）。メモリの値は消えず、$sp より下は「解放済み」扱いになるだけ。`; pc=8; break; }
+      case 8: case 15: { const to=R.ra; calls.pop();
+        d = to===MAIN_RA ? `$ra=${raStr(to)} へ戻る。呼び出し全体が終了。fact(${n}) = $v0 = ${R.v0}。` : `$ra=${raStr(to)}（呼び出し元の jal の PC+8 ＝ lw $a0）へ戻る。$v0=${R.v0} を持ち帰る。`;
+        if(to===MAIN_RA){ done=true; npc=to; } else pc=kOf(to); break; }
+      case 9: { const o=R.a0; R.a0-=1; d=`else：n を減らす。$a0: ${o} → ${R.a0}（これから fact(${R.a0}) を呼ぶ）。`; pc=10; break; }
+      case 10: { R.ra=addrOf(10)+8; calls.push('fact('+R.a0+')'); d=`$ra ← PC+8 = ${hex8(R.ra)}（jal の次の nop を飛ばした先＝lw $a0）に上書きして fact へ。fact(${R.a0}) 開始。さっき $ra を退避したのはこのため。`; pc=1; break; }
+      case 11: { const a=R.sp; R.a0=mem.get(a).raw; hiR=a; d=`戻ってきた。退避しておいた元の n を ${hex8(a)} から復元。$a0=${R.a0}`; pc=12; break; }
+      case 12: { const a=R.sp+4; R.ra=mem.get(a).raw; hiR=a; d=`退避した戻り先を ${hex8(a)} から復元。$ra=${raStr(R.ra)}`; pc=13; break; }
+      case 13: { const o=R.sp; R.sp+=8; d=`枠を解放：$sp ${hex8(o)} → ${hex8(R.sp)}。`; pc=14; break; }
+      case 14: { const o=R.v0; R.v0=R.a0*R.v0; d=`戻ってから掛ける：$a0 × $v0 = ${R.a0} × ${o} = ${R.v0}。これが ${me()} の結果。`; pc=15; break; }
+    }
+    if(npc===undefined) npc = addrOf(pc);
+    cur = k; row(k, NO(k), addrOf(k), npc);
+    rec(line, d);
+  }
+  hiR = hiW = null; cur = null;
+  rec('end', `完了。fact(${n}) = ${R.v0}。$sp=${hex8(R.sp)} は最初と同じ ― スタックは元通り。`);
+  return steps;
 }
-$('mNo').onclick=()=>{mode='no';rk=0;drawR()};
-$('mYes').onclick=()=>{mode='yes';rk=0;drawR()};
-$('rNext').onclick=()=>{rk=Math.min(S[mode].steps.length-1,rk+1);drawR()};
-$('rBack').onclick=()=>{rk=Math.max(0,rk-1);drawR()};
-$('rReset').onclick=()=>{rk=0;drawR()};
-drawR();
+
+/* ★4 drawView — スタック / トレース表（シートと同じ向き）/ 機械語フィールド */
+const view = document.getElementById('view');
+function drawView(s){
+  /* 1) スタック */
+  const mem = new Map(s.mem);
+  let h = '<div class="stk">';
+  h += `<div class="srow base"><span class="ad">${hx(SP0)}</span><span class="ct">▲ main 側（ここから下へ伸びる）${s.sp===SP0?'　<b class="sp">◀ $sp</b>':''}</span></div>`;
+  for(let k=1;k<=s.rows;k++){
+    const a = SP0-4*k, m = mem.get(a), live = a>=s.sp;
+    const cls = ['srow', m?'':'empty', live?'live':'dead', s.write===a?'w':'', s.read===a?'r':''].join(' ');
+    h += `<div class="${cls}"><span class="ad">${hx(a)}</span><span class="ct">${
+      m ? `<b>${m.v}</b> <i>${m.label}</i>${live?'':'　(解放済)'}` : (live?'<i>U（未書込み）</i>':'<i>—</i>')}${
+      a===s.sp ? '　<b class="sp">◀ $sp</b>' : ''}</span></div>`;
+  }
+  h += '</div>';
+  h += '<div class="calls"><span class="sub">呼び出し列：</span> main → ' + s.calls.map((c,i)=>
+        `<span class="chip${i===s.calls.length-1?' now':''}">${c}</span>`).join(' → ') + '</div>';
+  view.innerHTML = h;
+
+  /* 2) 機械語フィールド */
+  const fe = document.getElementById('fields');
+  if(s.cur){
+    const sp = SPEC[s.cur], mc = MC[s.cur];
+    const bin = mc.toString(2).padStart(32,'0');
+    const fmtName = {R:'R形式（レジスタ同士の演算）', I:'I形式（即値・メモリ・分岐）', J:'J形式（ジャンプ）'}[sp.fmt];
+    let pos = 0, boxes = '', list = '';
+    sp.f.forEach(f=>{
+      const bits = bin.slice(pos,pos+f.bits); pos += f.bits;
+      boxes += `<div class="fld f-${f.n}" style="flex:${f.bits}"><small>${f.n} (${f.bits}bit)</small><code>${bits.replace(/(.{4})(?=.)/g,'$1 ')}</code></div>`;
+      list += `<li><b>${f.n}</b> ${f.note}</li>`;
+    });
+    fe.innerHTML = `<div class="sub">${MN[s.cur]}　→　<b>${fmtName}</b>　機械語 <code>${hx(mc)}</code></div>
+      <div class="bitrule"><span>bit31</span><span>bit0</span></div>
+      <div class="fldrow">${boxes}</div><ul class="fnotes">${list}</ul>`;
+  } else {
+    fe.innerHTML = '<span class="sub">（命令を実行すると、その32bitの内訳が出ます）</span>';
+  }
+
+  /* 3) トレース表：課題シートと同じ向き（列 = サイクル） */
+  const cols = TROWS.slice(0, s.k), now = s.k-1;
+  const init = {a0:null,t0:null,v0:null,sp:SP0,ra:null};
+  const prev = i => i ? cols[i-1] : init;
+  const reg = (key,f) => cols.map((r,i)=>`<td class="${prev(i)[key]!==r[key]?'chg':''} ${i===now?'now':''}">${f(r[key])}</td>`).join('');
+  const plain = (f,extra) => cols.map((r,i)=>`<td class="${extra?extra(r):''} ${i===now?'now':''}">${f(r)}</td>`).join('');
+  const jmp = r => r.npc!==r.pc+4 ? 'jmp' : '';
+  let th = '<tbody>'
+    + `<tr><th>サイクル</th>${plain(r=>r.cyc)}</tr>`
+    + `<tr><th>命令No</th>${plain(r=>r.no)}</tr>`
+    + `<tr><th>mnemonic</th>${plain(r=>r.mn.split(' ')[0])}</tr>`
+    + `<tr><th>オペランド</th>${plain(r=>r.mn.split(' ').slice(1).join(' '))}</tr>`
+    + `<tr><th>機械語</th>${plain(r=>hx(r.mc))}</tr>`
+    + `<tr><th>PC</th>${plain(r=>hx(r.pc))}</tr>`
+    + `<tr><th>next PC</th>${plain(r=>hx(r.npc)+(jmp(r)?' ⤴':''),jmp)}</tr>`
+    + `<tr><th>$a0</th>${reg('a0',val)}</tr><tr><th>$t0</th>${reg('t0',val)}</tr><tr><th>$v0</th>${reg('v0',val)}</tr>`
+    + `<tr><th>$sp</th>${reg('sp',hx)}</tr><tr><th>$ra</th>${reg('ra',hx)}</tr></tbody>`;
+  const CW = 104, HW = 84;                       // セル幅・見出し列の幅（固定）
+  const colg = `<colgroup><col style="width:${HW}px">${cols.map(()=>`<col style="width:${CW}px">`).join('')}</colgroup>`;
+  const wpx = (HW + Math.max(cols.length,1)*CW) + 'px';
+  const tb = document.getElementById('ttbl'); tb.style.width = wpx; tb.innerHTML = colg + th;
+  /* スタック表 */
+  let sh = `<tbody><tr><th>${hx(SP0)}</th><td colspan="${Math.max(cols.length,1)}" class="sub" style="text-align:left">fact の呼出し側で使用されている</td></tr>`;
+  for(let q=1;q<=s.rows;q++){
+    sh += `<tr><th>${hx(SP0-4*q)}</th>` + cols.map((r,i)=>{
+      const [act,v] = r.stk[q-1], pv = i? cols[i-1].stk[q-1] : [0,null];
+      const ch = act && (!pv[0] || pv[1]!==v);
+      return `<td class="${act?'':'gray'} ${ch?'chg':''} ${i===now?'now':''}">${act? v : (v===null?'':'<span class="stale">'+v+'</span>')}</td>`;
+    }).join('') + '</tr>';
+  }
+  const st = document.getElementById('stbl'); st.style.width = wpx; st.innerHTML = colg + sh + '</tbody>';
+  for(const w of [tb.parentElement, st.parentElement]) w.scrollLeft = w.scrollWidth;
+
+  /* 4) 擬似コード各行に「その行を実行したサイクル」を表示（いま実行した分は強調） */
+  const by = {}; cols.forEach((r,i)=>{ (by[r.id] = by[r.id] || []).push([r.cyc, i===now]); });
+  document.querySelectorAll('.cl').forEach(el=>{
+    const c = el.querySelector('.cyc'); if(!c) return;
+    const a = by[el.dataset.id];
+    c.innerHTML = a ? 'cycle ' + a.map(([n,cur])=>cur?`<b>${n}</b>`:n).join(', ') : '';
+  });
+}
+
+/* =====================================================================
+   ENGINE — 触らない。再生制御・コードハイライト・変数ウォッチ・ショートカット
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+let input, steps, idx = 0, timer = null, prevVars = {};
+
+function buildStatic(){
+  $('title').textContent = META.title + ' コードリーディング';
+  $('subtitle').textContent = META.subtitle;
+  $('chips').innerHTML = META.chips.map(c=>`<span class="chip">${c}</span>`).join('');
+  $('legend').innerHTML = META.legend.map(([v,l])=>`<span><i style="background:var(${v})"></i>${l}</span>`).join('');
+  $('noteTitle').textContent = META.noteTitle;
+  $('notes').innerHTML = META.notes.map(t=>`<li>${t}</li>`).join('');
+  $('foot').textContent = META.foot;
+  $('code').innerHTML = CODE.map((l,k)=>
+    `<div class="cl" data-id="${l.id}"><span class="ad">${l.no?hx(BASE+4*(l.no-1)):""}</span><span class="no">${l.no??""}</span><span>${'    '.repeat(l.indent)}${
+      l.text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="cyc"></span></div>`).join('');
+}
+
+function render(){
+  const s = steps[idx];
+  document.querySelectorAll('.cl').forEach(el=>el.classList.toggle('active', el.dataset.id===s.line));
+  drawView(s);
+  $('say').textContent = s.desc;
+  const keys = Object.keys(s.vars);
+  $('vars').innerHTML = keys.length ? keys.map(k=>
+    `<div class="var ${prevVars[k]!==undefined && prevVars[k]!==s.vars[k]?'changed':''}">${k}<b>${s.vars[k]}</b></div>`).join('')
+    : '<span class="sub">（まだ変数なし）</span>';
+  prevVars = s.vars;
+  $('statline').textContent = Object.entries(s.stats).map(([k,v])=>`${k}: ${v}`).join('　');
+  $('prog').style.width = (idx/(steps.length-1)*100)+'%';
+  $('bPlay').textContent = timer ? '⏸ 一時停止' : '▶ 再生';
+  $('bBack').disabled = idx===0;
+}
+const delay = () => 3*(1100 - $('speed').value*100);   // 3倍遅く：1→3000ms … 10→300ms（既定5→1800ms）
+function stop(){ clearInterval(timer); timer=null; }
+function play(){
+  if(timer){ stop(); return render(); }
+  if(idx>=steps.length-1) idx=0;
+  timer = setInterval(()=>{ if(idx<steps.length-1){ idx++; render(); } else { stop(); render(); } }, delay());
+  render();
+}
+function step(d){ stop(); idx=Math.max(0,Math.min(steps.length-1,idx+d)); render(); }
+function load(kind){ stop(); view.innerHTML=''; input = makeInput(kind); steps = trace(input); idx=0; prevVars={}; render(); }
+
+$('bPlay').onclick = play;
+$('bStep').onclick = ()=>step(1);
+$('bBack').onclick = ()=>step(-1);
+$('bReset').onclick = ()=>{ stop(); idx=0; prevVars={}; render(); };
+$('bNew').onclick = ()=>load('random');
+$('speed').oninput = e=>{ $('speedLabel').textContent=(e.target.value/5).toFixed(1)+'x'; if(timer){ stop(); play(); } };
+addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.code==='Space'){ e.preventDefault(); play(); }
+  if(e.code==='ArrowRight') step(1);
+  if(e.code==='ArrowLeft') step(-1);
+});
+addEventListener('resize', ()=>render());
+
+buildStatic();
+load('random');
 </script>
 </body>
 </html>
