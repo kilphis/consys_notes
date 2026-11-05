@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>コンピュータの言葉：土台</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#111833; --code-bg:#060a18; --line:#1e293b; --text:#cbd5e1; --muted:#64748b;
+  --accent:#3b82f6; --accent-soft:rgba(59,130,246,.2);
+  --ok:#10b981; --warn:#fbbf24; --bad:#f43f5e;
+}
+:root[data-theme="light"]{--bg:#f1f5f9;--panel:#fff;--code-bg:#f8fafc;--line:#e2e8f0;--text:#334155;--muted:#64748b;--accent:#2563eb;--accent-soft:rgba(37,99,235,.12)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f1f5f9;--panel:#fff;--code-bg:#f8fafc;--line:#e2e8f0;--text:#334155;--muted:#64748b;--accent:#2563eb;--accent-soft:rgba(37,99,235,.12)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.75}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 64px;display:grid;grid-template-columns:1fr;gap:24px}
+@media(min-width:900px){.wrap{grid-template-columns:200px 1fr}}
+nav{position:sticky;top:12px;align-self:start;font-size:.8rem}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 8px;border-left:3px solid var(--line)}
+nav a:hover{color:var(--accent);border-left-color:var(--accent)}
+@media(max-width:899px){nav{position:static;display:flex;flex-wrap:wrap;gap:4px}nav a{border:1px solid var(--line);border-radius:8px}}
+h1{font-size:1.4rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:0 0 10px;display:flex;gap:10px;align-items:center}
+h2 .n{background:var(--accent);color:#fff;border-radius:8px;padding:0 10px;font-size:.9rem}
+h3{font-size:.92rem;margin:16px 0 6px}
+.sub{color:var(--muted);font-size:.85rem}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:18px}
+code,pre{font-family:ui-monospace,"JetBrains Mono",Menlo,monospace}
+code{background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:.85rem;line-height:1.55;overflow:auto;margin:8px 0}
+pre .c{color:var(--muted)}
+.box{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:8px 14px;margin:12px 0;font-size:.92rem}
+.box.warn{border-left-color:var(--warn);background:rgba(251,191,36,.12)}
+.box.ok{border-left-color:var(--ok);background:rgba(16,185,129,.12)}
+.pdf{display:inline-block;font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 8px;margin-left:auto;font-weight:400}
+table{border-collapse:collapse;font-size:.85rem;margin:8px 0}
+th,td{border:1px solid var(--line);padding:4px 10px;text-align:left}
+th{background:var(--code-bg)}
+button{font:inherit;font-size:.85rem;color:var(--text);background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mem{display:flex;gap:2px;margin:10px 0;flex-wrap:wrap}
+.cell{border:1px solid var(--line);background:var(--code-bg);border-radius:8px;padding:4px 10px;text-align:center;font:.78rem ui-monospace,Menlo,monospace;min-width:92px;transition:background .2s,border-color .2s}
+.cell small{display:block;color:var(--muted)}
+.cell.hit{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.ladder{counter-reset:s;list-style:none;padding:0;margin:0}
+.ladder li{counter-increment:s;padding:6px 0 6px 38px;position:relative;border-bottom:1px dashed var(--line);font-size:.92rem}
+.ladder li::before{content:counter(s);position:absolute;left:0;top:7px;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:.8rem}
+.ladder li.goal::before{background:var(--accent);color:#fff}
+details{border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:8px 0;background:var(--code-bg)}
+summary{cursor:pointer;font-weight:600;font-size:.9rem}
+.st{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
+@media(min-width:700px){.st{grid-template-columns:1fr 1fr}}
+.regs{display:flex;gap:10px;flex-wrap:wrap;font:.82rem ui-monospace,Menlo,monospace}
+.regs span{border:1px solid var(--line);border-radius:8px;padding:2px 10px;background:var(--code-bg)}
+.regs b{color:var(--warn)}
+.verdict{margin-top:8px;font-weight:700}
+.verdict.bad{color:var(--bad)}.verdict.ok{color:var(--ok)}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <a href="#map">0 地図</a><a href="#s1">1 言葉とは</a><a href="#s2">2 レジスタとメモリ</a><a href="#s3">3 算術</a>
+  <a href="#s4">4 lw / sw</a><a href="#s5">5 比較と分岐</a><a href="#s6">6 PC とジャンプ</a><a href="#s7">7 手続き</a>
+  <a href="#s8">8 スタック</a><a href="#s9">9 なぜ退避</a><a href="#s10">10 確認問題</a>
+</nav>
+<main>
+  <h1>コンピュータの言葉：fact を読むための土台</h1>
+  <div class="sub">第2章スライドの「入れ子にされた手続例（p.104-106）」を読むのに必要な前提を、下から積み上げ直す補習ページ。</div>
+
+  <section class="card" id="map">
+    <h2>0 地図：fact にたどり着くまでの9段</h2>
+    <ol class="ladder">
+      <li>言葉（命令）とは何か ― CPU が理解できる語彙</li>
+      <li>材料 ― レジスタ（作業台）とメモリ（倉庫）</li>
+      <li>算術命令 ― <code>add</code> <code>addi</code> は必ず「宛先, 元1, 元2」</li>
+      <li>メモリの出し入れ ― <code>lw</code> <code>sw</code> とオフセット</li>
+      <li>比較と分岐 ― <code>slti</code> + <code>beq</code> で if を作る</li>
+      <li>PC とジャンプ ― <code>jal</code> は「飛んで、戻り先を $ra に置く」</li>
+      <li>手続き（関数）の約束 ― 引数 $a0・結果 $v0・レジスタ規約</li>
+      <li>スタック ― 「$sp を動かして、自分の机を借りる」</li>
+      <li class="goal">入れ子・再帰 ― なぜ $ra と $a0 を退避するのか ＝ <b>fact</b></li>
+    </ol>
+    <div class="box">どの段で「あれ？」となるかが分かれば十分。1段ずつ読んで、止まった段だけ戻る使い方を想定している。
+    fact の1命令ずつの動きは <a href="mips/fact-walkthrough.html">fact-walkthrough.html</a> にある。</div>
+  </section>
+
+  <section class="card" id="s1">
+    <h2><span class="n">1</span>「言葉」とは：命令セット <span class="pdf">講義前半（別PDF）</span></h2>
+    <p>CPU は日本語も C も分からない。分かるのは、あらかじめ決められた<b>命令の一覧（命令セット）</b>だけ。これが「コンピュータの言葉」。MIPS は命令セットの1種類で、特徴は<b>全命令が 32bit 固定長</b>であること。</p>
+    <pre>人間が書く(アセンブリ)   addi $sp, $sp, -8
+        ↓ アセンブラ
+CPUが読む(機械語)        0010 0011 1011 1101 1111 1111 1111 1000  = 0x23BDFFF8</pre>
+    <p>アセンブリと機械語は<b>1対1</b>で対応する。mnemonic（<code>addi</code> など）は機械語の op/funct に付けた人間用の名前に過ぎない。</p>
+    <div class="box warn"><b>よくある誤解</b>「レジスタは命令を入れるところ？」→ いいえ。<b>命令はメモリに置かれている</b>。CPU は PC（次の命令のアドレス）が指すメモリから命令を取り出して実行する。レジスタは、命令が計算に使う<b>データ</b>の作業台。</div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="n">2</span>材料：レジスタとメモリ</h2>
+    <table>
+      <tr><th></th><th>レジスタ</th><th>メモリ</th></tr>
+      <tr><td>数</td><td>32個（各32bit）</td><td>何十億バイト</td></tr>
+      <tr><td>速さ</td><td>非常に速い</td><td>遅い</td></tr>
+      <tr><td>呼び方</td><td>番号／名前（<code>$t0</code>）</td><td><b>アドレス</b>（1バイトごとに番号）</td></tr>
+      <tr><td>演算</td><td>できる</td><td>直接はできない</td></tr>
+    </table>
+    <p>MIPS の演算命令が触れるのは<b>レジスタだけ</b>。メモリの値を計算に使うには、いったんレジスタへ<b>運ぶ</b>（<code>lw</code>）、結果はメモリへ<b>書き戻す</b>（<code>sw</code>）。これが後で出てくる「退避・復元」の正体。</p>
+    <div class="box">1語 = 32bit = <b>4バイト</b>。メモリのアドレスはバイト単位なので、隣の語は +4 番地。「アドレスに ×4」が頻繁に出てくるのはこのため。</div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="n">3</span>算術命令：宛先, 元1, 元2 <span class="pdf">p.80前後（前半PDF）</span></h2>
+<pre>add  $t0, $s1, $s2     <span class="c"># $t0 = $s1 + $s2</span>
+sub  $t0, $s1, $s2     <span class="c"># $t0 = $s1 - $s2</span>
+addi $t0, $s1, 5       <span class="c"># $t0 = $s1 + 5   （第3項が定数）</span>
+mul  $v0, $a0, $v0     <span class="c"># $v0 = $a0 * $v0</span></pre>
+    <ul>
+      <li><b>書き方は「宛先が先頭」</b>。機械語では順番が違う（R形式は <code>rs rt rd</code> の順で、rd＝宛先が最後）。ここが入れ替わるのでミスしやすい。</li>
+      <li><code>$zero</code> は常に 0。<code>addi $v0,$zero,1</code> は「0+1」で<b>定数 1 を $v0 に入れる</b>。</li>
+      <li>減算に <code>subi</code> は無い。<code>addi</code> に負の定数を使う（<code>addi $sp,$sp,-8</code>）。</li>
+    </ul>
+    <p>例 <code>f = (g+h) - (i+j)</code> ※ g,h,i,j = $s1〜$s4, f = $s0</p>
+<pre>add $t0, $s1, $s2     <span class="c"># t0 = g+h</span>
+add $t1, $s3, $s4     <span class="c"># t1 = i+j</span>
+sub $s0, $t0, $t1     <span class="c"># f  = t0 - t1</span></pre>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="n">4</span>メモリの出し入れ：lw / sw とオフセット</h2>
+<pre>lw  $t0, 8($s3)     <span class="c"># $t0 ← Mem[ $s3 + 8 ]   （メモリ → レジスタ, load word）</span>
+sw  $t0, 8($s3)     <span class="c"># Mem[ $s3 + 8 ] ← $t0   （レジスタ → メモリ, store word）</span></pre>
+    <p><code>8($s3)</code> の読み方：<b>ベース</b>＝レジスタ <code>$s3</code> の中身（アドレス）、<b>オフセット</b>＝<code>8</code>。アクセス先は <code>$s3 + 8</code> 番地。</p>
+    <div class="box"><b>オフセットはレジスタ上の定数ではない</b>。命令の機械語の中の <code>imm</code>（16bit）フィールドに<b>直接埋め込まれた定数</b>。レジスタの中身は変わりうるが、オフセットは命令に焼き込まれて不変。
+    だから <code>sw $ra, 4($sp)</code> は「$sp が指す場所の 4 バイト先」と読む。</div>
+    <h3>手で触る：配列 A[i] の番地（A の先頭アドレスが $s3 = 0x4000, 要素は4バイト）</h3>
+    <div id="arr"></div>
+    <div class="sub" id="arrSay"></div>
+  </section>
+
+  <section class="card" id="s5">
+    <h2><span class="n">5</span>比較と分岐：if を作る <span class="pdf">p.97-99</span></h2>
+    <p>MIPS に「<code>if (a &lt; b) goto L</code>」という1命令は無い。<b>2命令に分ける</b>：</p>
+<pre>slti $t0, $a0, 1        <span class="c"># $a0 &lt; 1 なら $t0 = 1、そうでなければ 0</span>
+beq  $t0, $zero, L1     <span class="c"># $t0 == 0 なら L1 へ分岐</span></pre>
+    <ul>
+      <li><code>slt</code> 系は結果を<b>0/1としてレジスタに入れる</b>（真=1、偽=0）。</li>
+      <li><code>beq</code>/<code>bne</code> は「2つのレジスタが等しい／等しくない」だけ判定する。<code>$zero</code> と比べれば「0か否か」。</li>
+      <li>なぜ <code>blt</code> が無い？ ハードウェアで「大小比較」は「等しいか」より遅く、クロックを上げにくいから（p.98）。よく使う == と != だけ速くする設計の妥協。</li>
+    </ul>
+    <div class="box warn"><b>fact で一番ひっくり返りやすい所</b>：<code>beq $t0,$zero,L1</code> は <code>$t0==0</code> のとき L1 へ飛ぶ。<br>
+    $t0 は「n&lt;1 なら 1」だったので、<b>$t0==0 ＝ n≧1（偽）</b>。つまり n≧1 のとき L1（else側・再帰）へ飛び、n&lt;1 のときは飛ばず下の「結果は1」に落ちる。C の <code>if (n&lt;1)</code> と<b>分岐の向きが逆</b>に見えるのはこのため。</div>
+    <table>
+      <tr><th>n</th><th>slti → $t0</th><th>beq $t0==0 ?</th><th>行き先</th></tr>
+      <tr><td>0</td><td>1 (0&lt;1 真)</td><td>いいえ</td><td>下へ落ちる → 結果 1（基底ケース）</td></tr>
+      <tr><td>3</td><td>0 (3&lt;1 偽)</td><td>はい</td><td>L1 へ → 再帰</td></tr>
+    </table>
+    <p><b>符号付き vs 符号なし</b>（p.98-99）：<code>slt</code> は符号付き、<code>sltu</code> は符号なし。全bitが1の値は、符号付きでは -1、符号なしでは 4294967295。同じ32bitでも読み方で大小が変わる。</p>
+  </section>
+
+  <section class="card" id="s6">
+    <h2><span class="n">6</span>PC とジャンプ：jal と jr <span class="pdf">p.117-121</span></h2>
+    <p><b>PC（プログラムカウンタ）＝次に実行する命令のアドレス</b>。命令は4バイトなので、通常は毎回 <code>PC ← PC + 4</code>。これを書き換える命令だけが「飛ぶ」：</p>
+    <table>
+      <tr><th>命令</th><th>PC がどうなるか</th></tr>
+      <tr><td><code>beq / bne</code></td><td>成立時だけ <code>PC+4 + オフセット×4</code>（近くへ）</td></tr>
+      <tr><td><code>j L</code></td><td>L へ（26bit のアドレス部 ×4 で遠くへ）</td></tr>
+      <tr><td><code>jal L</code></td><td><b>$ra ← PC+8</b>（戻り先を記録）してから L へ。<br><span class="sub">実機では jal の次の1命令（遅延スロット、通常 nop）も先に実行される設計なので、その次＝PC+8 に戻る（PC+4 と書く教科書の簡略説明もある）</span></td></tr>
+      <tr><td><code>jr $ra</code></td><td>PC ← <b>$ra の中身</b>（記録しておいた戻り先へ）</td></tr>
+    </table>
+    <div class="box">jal の <b>l</b>ink ＝「戻り先を結びつけて残す」。<code>jal</code> と <code>jr $ra</code> は<b>ワンセット</b>：呼ぶとき jal が帰り道を $ra に置き、終わるとき jr が $ra の道を辿る。<br>
+    分岐オフセットも ×4 される理由：命令は4バイト境界にしか無いので、下位2bitは常に00。省いた分、16bitで ±3万命令先まで届く（p.120）。</div>
+  </section>
+
+  <section class="card" id="s7">
+    <h2><span class="n">7</span>手続き（関数）：呼ぶ側と呼ばれる側の約束 <span class="pdf">p.100-103 / スライド12-17</span></h2>
+    <p>手続きを呼ぶ手順（p.100）：①引数を置く → ②制御を移す → ③必要なメモリを確保 → ④仕事 → ⑤結果を置く → ⑥元に戻る。誰がどこに置くかは<b>レジスタ利用規約</b>で決まっている：</p>
+    <table>
+      <tr><th>レジスタ</th><th>役割</th><th>約束</th></tr>
+      <tr><td><code>$a0–$a3</code> (4–7)</td><td>引数</td><td>呼ぶ側が置く</td></tr>
+      <tr><td><code>$v0,$v1</code> (2,3)</td><td>結果</td><td>呼ばれた側が置く</td></tr>
+      <tr><td><code>$t0–$t9</code></td><td>一時用</td><td>呼ばれた側は<b>勝手に壊してよい</b></td></tr>
+      <tr><td><code>$s0–$s7</code></td><td>保存用</td><td>使うなら呼ばれた側が<b>保存→復元</b>（返すとき元通りに）</td></tr>
+      <tr><td><code>$sp</code> (29)</td><td>スタックの先頭</td><td>出るときは入る前の値に戻す</td></tr>
+      <tr><td><code>$ra</code> (31)</td><td>戻りアドレス</td><td>jal が上書きする</td></tr>
+    </table>
+    <h3>踏み台：他の手続きを呼ばない例（leaf）<span class="sub">C: <code>f = g + h - i + j</code></span></h3>
+<pre>leaf_example:               <span class="c"># g,h,i,j = $a0..$a3</span>
+  addi $sp, $sp, -4         <span class="c"># 1語ぶん枠を確保</span>
+  sw   $s0, 0($sp)          <span class="c"># $s0 を使うので退避（保存用だから）</span>
+  add  $t0, $a0, $a1        <span class="c"># g+h   ($t は壊してよいので保存不要)</span>
+  add  $t1, $a2, $a3        <span class="c"># i+j</span>
+  sub  $s0, $t0, $t1        <span class="c"># f = ...</span>
+  add  $v0, $s0, $zero      <span class="c"># 結果を $v0 へ</span>
+  lw   $s0, 0($sp)          <span class="c"># $s0 を元に戻す</span>
+  addi $sp, $sp, 4          <span class="c"># 枠を解放</span>
+  jr   $ra                  <span class="c"># 戻る</span></pre>
+    <div class="box ok">fact と同じ型：<b>①枠を確保 → ②退避 → ③仕事 → ④復元 → ⑤枠を解放 → ⑥jr</b>。leaf は他を呼ばないので <code>$ra</code> を退避する必要が無い（jal で上書きされないから）。次の段は、その必要が生まれる場面。</div>
+  </section>
+
+  <section class="card" id="s8">
+    <h2><span class="n">8</span>スタック：自分用の机を借りる <span class="pdf">p.103-107 / スライド21-22</span></h2>
+    <ul>
+      <li>メモリの一角を<b>後入れ先出し（LIFO）</b>で使う領域。<b>アドレスの大きい方から小さい方へ伸びる</b>（下向き）。</li>
+      <li><code>$sp</code> は「いま積まれている一番上（＝アドレスが一番小さい）」を指す。</li>
+      <li>MIPS に push/pop 命令は無い。自分で書く：
+<pre>push 1語:  addi $sp,$sp,-4   →  sw $x,0($sp)
+pop  1語:  lw   $x,0($sp)    →  addi $sp,$sp,4</pre></li>
+      <li><b>確保＝ $sp を減らす、解放＝ $sp を増やす</b>。解放しても中身は消えない（上書きされるまで残る）。ただし「$sp より下」は使用済みとして扱うので、そこを読んではいけない。</li>
+    </ul>
+    <p>fact は1回の呼び出しごとに 2語（$ra と $a0）の枠を取る。<b>呼び出しごとに別の枠</b>ができるから、再帰の各段が自分の $a0・$ra を別々に持てる。</p>
+  </section>
+
+  <section class="card" id="s9">
+    <h2><span class="n">9</span>なぜ退避が要る？：入れ子の呼び出し <span class="pdf">p.104-106 / スライド18-20</span></h2>
+    <p>main が <code>A</code> を呼び、<code>A</code> がさらに <code>B</code> を呼ぶ場面。<b>$ra は1個しかない</b>ので、A が jal B をすると main への帰り道が上書きされる。切り替えて確かめる。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+      <button id="mNo" class="on">退避しない</button><button id="mYes">$ra を退避する</button>
+      <span style="flex:1"></span>
+      <button id="rBack">◀</button><button id="rNext">次へ ▶</button><button id="rReset">↺</button>
+    </div>
+    <div class="st">
+      <pre id="rcode"></pre>
+      <div>
+        <div class="regs" id="rregs"></div>
+        <div class="sub" style="margin-top:8px">スタック（$sp が指す語）：<span id="rstk"></span></div>
+        <div id="rsay" style="margin-top:10px;min-height:3.2em"></div>
+        <div id="rver" class="verdict"></div>
+      </div>
+    </div>
+    <div class="box"><b>fact はこれが「A が fact 自身」になったもの</b>。fact(3) が fact(2) を呼ぶと、$ra が上書きされる。だから最初に <code>sw $ra,4($sp)</code> で逃がす。
+    $a0 も同じ理由：呼ぶ前に <code>addi $a0,$a0,-1</code> で n を書き換えるので、戻ってから掛け算に使う<b>元の n</b>はスタックから取り戻す。</div>
+    <p><b>基底ケース</b>（n&lt;1）は jal をしないので $ra は無傷。枠を捨てて <code>jr $ra</code> だけで正しく戻れる（$ra を lw で戻す命令が無いのはそのため）。</p>
+  </section>
+
+  <section class="card" id="s10">
+    <h2><span class="n">10</span>確認問題（答えは開いて確認）</h2>
+    <details><summary>Q1. <code>lw $a0, 8($s3)</code>、$s3 = 0x4000 のとき、どのアドレスの語を読む？</summary>0x4000 + 8 = <b>0x4008</b>。オフセット 8 は命令の imm にある定数。</details>
+    <details><summary>Q2. n = 0 のとき、<code>beq $t0,$zero,L1</code> は飛ぶ？</summary>$t0 = (0&lt;1) = 1。1 ≠ 0 なので<b>飛ばない</b>。下に落ちて「結果は 1」。</details>
+    <details><summary>Q3. <code>jal fact</code> は $ra に何を入れる？</summary><b>PC+8</b>（jal の次の遅延スロット nop を飛ばした先）。fact では <code>lw $a0, 0($sp)</code> の行。課題シートはこの設定。</details>
+    <details><summary>Q4. 退避の <code>sw $ra,4($sp)</code> を忘れたらどうなる？</summary>fact が fact を呼んだ時点で $ra が内側の戻り先に上書きされ、外側の呼び出しが main に戻れず、同じ場所をぐるぐる回る（§9 の「退避しない」）。</details>
+    <details><summary>Q5. <code>jr $ra</code> の機械語は R形式、<code>jal</code> は J形式。なぜ形式が違う？</summary>jr は「レジスタ（rs=31）の中身へ飛ぶ」ので<b>レジスタ番号</b>を持てばよく R形式。jal は「命令に書かれた固定の飛び先」なので<b>26bit のアドレス</b>を持つ J形式。</details>
+    <details><summary>Q6. 基底ケースの <code>addi $sp,$sp,8</code> は、n=0 で何をしている？</summary>入口で <code>-8</code> して確保した2語の枠をそのまま解放している。中の $ra・$a0 は書き込んだが読まない（$ra は無傷なので復元不要）。</details>
+    <details><summary>Q7. fact(3) の <code>mul</code> は何回実行され、いつ？</summary>fact(3), fact(2), fact(1) の<b>3回</b>（fact(0) は基底ケースで mul に到達しない）。いずれも<b>戻ってきてから</b>。順に 1×1=1 → 2×1=2 → 3×2=6。</details>
+  </section>
+  <div class="sub">戻る：<a href="mips/fact-walkthrough.html">fact を1命令ずつ追う</a></div>
+</main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---- §4 配列アドレス ---- */
+let ai = 2;
+function drawArr(){
+  const base = 0x4000;
+  $('arr').innerHTML =
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">` +
+    [0,1,2,3].map(i=>`<button class="${i===ai?'on':''}" onclick="ai=${i};drawArr()">A[${i}]</button>`).join('') + `</div>` +
+    `<div class="mem">` + [0,1,2,3].map(i=>`<div class="cell ${i===ai?'hit':''}"><small>0x${(base+4*i).toString(16)}</small>A[${i}]</div>`).join('') + `</div>`;
+  $('arrSay').innerHTML = `<code>lw $t0, ${4*ai}($s3)</code> → アドレス = 0x4000 + <b>${4*ai}</b> = <b>0x${(base+4*ai).toString(16)}</b>（オフセット = 4 × ${ai}。要素が4バイトだから）`;
+}
+drawArr();
+
+/* ---- §9 $ra 退避ステッパ ---- */
+const S = {
+ no: {
+  code:[
+   ['main','0x400','jal  A'],
+   ['A','0x504','jal  B'],
+   ['A','0x508','jr   $ra'],
+   ['B','0x600','jr   $ra'],
+  ],
+  steps:[
+   {i:-1,ra:'—',stk:'—',pc:'0x400',say:'開始。main が jal A を実行しようとしている。'},
+   {i:0, ra:'0x404',stk:'—',pc:'0x504',say:'jal A：$ra ← 0x404（main の続き）。A へ。'},
+   {i:1, ra:'0x508',stk:'—',pc:'0x600',say:'A が jal B：$ra ← 0x508。<b>さっきの 0x404 は上書きされて消えた</b>。'},
+   {i:3, ra:'0x508',stk:'—',pc:'0x508',say:'B の jr $ra：0x508（A の続き）へ戻る。ここまでは正しい。'},
+   {i:2, ra:'0x508',stk:'—',pc:'0x508',say:'A の jr $ra：$ra はまだ 0x508。<b>また A の続きへ飛ぶ</b>。main の 0x404 はもう分からない。',bad:1},
+  ],
+  verdict:['bad','✗ main に戻れず、同じ場所をぐるぐる回る（無限ループ）']},
+ yes: {
+  code:[
+   ['main','0x400','jal  A'],
+   ['A','0x500','sw   $ra, 0($sp)'],
+   ['A','0x504','jal  B'],
+   ['A','0x508','lw   $ra, 0($sp)'],
+   ['A','0x50c','jr   $ra'],
+   ['B','0x600','jr   $ra'],
+  ],
+  steps:[
+   {i:-1,ra:'—',stk:'—',pc:'0x400',say:'開始。main が jal A を実行しようとしている。'},
+   {i:0, ra:'0x404',stk:'—',pc:'0x500',say:'jal A：$ra ← 0x404。A へ。'},
+   {i:1, ra:'0x404',stk:'0x404',pc:'0x504',say:'<b>A が最初に $ra をスタックへ退避</b>。0x404 がメモリに避難した。'},
+   {i:2, ra:'0x508',stk:'0x404',pc:'0x600',say:'A が jal B：$ra ← 0x508 に上書き。でも 0x404 はスタックに無事。'},
+   {i:5, ra:'0x508',stk:'0x404',pc:'0x508',say:'B の jr $ra：A の続きへ戻る。'},
+   {i:3, ra:'0x404',stk:'0x404',pc:'0x50c',say:'<b>lw で $ra を復元</b>。0x404 が $ra に戻った。'},
+   {i:4, ra:'0x404',stk:'0x404',pc:'0x404',say:'A の jr $ra：main の続き（0x404）へ。',ok:1},
+  ],
+  verdict:['ok','✓ 正しく main に戻れる']},
+};
+let mode='no', rk=0;
+function drawR(){
+  const m=S[mode], st=m.steps[rk];
+  $('rcode').innerHTML = m.code.map((c,k)=>
+    `<div style="${k===st.i?'background:var(--accent-soft);border-left:4px solid var(--accent);font-weight:700;':'border-left:4px solid transparent;'}padding-left:6px">${c[0].padEnd(5)} ${c[1]}  ${c[2]}</div>`).join('');
+  $('rregs').innerHTML = `<span>$ra = <b>${st.ra}</b></span><span>次の PC = <b>${st.pc}</b></span>`;
+  $('rstk').textContent = st.stk;
+  $('rsay').innerHTML = `<span class="sub">ステップ ${rk}/${m.steps.length-1}</span><br>${st.say}`;
+  $('rver').className='verdict ' + (rk===m.steps.length-1 ? m.verdict[0] : '');
+  $('rver').textContent = rk===m.steps.length-1 ? m.verdict[1] : '';
+  $('mNo').className = mode==='no'?'on':''; $('mYes').className = mode==='yes'?'on':'';
+}
+$('mNo').onclick=()=>{mode='no';rk=0;drawR()};
+$('mYes').onclick=()=>{mode='yes';rk=0;drawR()};
+$('rNext').onclick=()=>{rk=Math.min(S[mode].steps.length-1,rk+1);drawR()};
+$('rBack').onclick=()=>{rk=Math.max(0,rk-1);drawR()};
+$('rReset').onclick=()=>{rk=0;drawR()};
+drawR();
+</script>
+</body>
+</html>
