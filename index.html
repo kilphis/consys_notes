@@ -248,7 +248,7 @@ footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
 const META = {
   title: 'MIPS 再帰 fact(n)（課題シート準拠）',
   subtitle: '確認テスト⑦のシートと同じ設定（PC=0x80030000 / $sp=0xBFFFEE00 / jal の次に nop・$ra=PC+8）で1命令ずつ追う',
-  chips: ['n! = n × (n-1)!', '1語 = 32bit = 4バイト', '「別のデータ」で n を切替（0,1,2,3,5。最初は n=5）'],
+  chips: ['n! = n × (n-1)!', '1語 = 32bit = 4バイト', '「別のデータ」で n を切替（0,1,2,3,5。最初は n=3）'],
   legend: [['--compare','読んだ (lw)'],['--change','書いた (sw)'],['--idle','使用中の枠'],['--muted','解放済み(古い値が残るだけ)']],
   noteTitle: '読み方のポイント',
   notes: [
@@ -294,8 +294,8 @@ const addrOf = k => BASE + 4*(NO(k)-1);
 const kOf = a => { for(let k=1;k<=15;k++) if(addrOf(k)===a) return k; };
 const FACT26 = (addrOf(1)>>>2) & 0x3FFFFFF;     // fact のアドレス÷4 の下位26bit
 const NS = [0,1,2,3,5];
-let curI = 3;   // 最初の makeInput() が 5 を返す
-function makeInput(){ curI = (curI+1)%NS.length; return NS[curI]; }   // 5,0,1,2,3,5,0…
+let curI = 2;   // 最初の makeInput() が 3 を返す
+function makeInput(){ curI = (curI+1)%NS.length; return NS[curI]; }   // 3,5,0,1,2,3,5…
 const hx = x => x===null ? 'U' : (x>>>0).toString(16).toUpperCase().padStart(8,'0');
 const hex8 = x => x===null ? 'U' : '0x'+hx(x);
 const raStr = r => r===null ? 'U' : hex8(r) + (r===MAIN_RA ? '（main）' : '');
