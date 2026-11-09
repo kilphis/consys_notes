@@ -170,9 +170,9 @@ footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
           <button id="bPlay" class="primary">▶ 再生</button>
           <button id="bStep">1ステップ ▶</button>
           <button id="bReset">↺ リセット</button>
-          <button id="bNew">⤮ 別のデータ</button>
+          <label class="sub" style="display:flex;gap:6px;align-items:center">n = <select id="nSel"></select></label>
           <label class="sub spd" style="display:flex;gap:8px;align-items:center;flex:1;min-width:200px">速度
-            <input id="speed" type="range" min="1" max="10" value="5"><span id="speedLabel">1.0x</span></label>
+            <input id="speed" type="range" min="1" max="10" value="10"><span id="speedLabel">2.0x</span></label>
         </div>
         <div class="sub kbd" style="margin-top:4px;font-size:.72rem">ショートカット: Space=再生/停止　←/→=1ステップ戻る/進む</div>
   </section>
@@ -532,13 +532,15 @@ function play(){
   render();
 }
 function step(d){ stop(); idx=Math.max(0,Math.min(steps.length-1,idx+d)); render(); }
-function load(kind){ stop(); view.innerHTML=''; input = makeInput(kind); steps = trace(input); idx=0; prevVars={}; render(); }
+function load(n){ stop(); view.innerHTML=''; input = n; $('nSel').value = n; steps = trace(input); idx=0; prevVars={}; render(); }
 
 $('bPlay').onclick = play;
 $('bStep').onclick = ()=>step(1);
 $('bBack').onclick = ()=>step(-1);
 $('bReset').onclick = ()=>{ stop(); idx=0; prevVars={}; render(); };
-$('bNew').onclick = ()=>load('random');
+const NSEL = [0,1,2,3,5];
+NSEL.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; $('nSel').appendChild(o); });
+$('nSel').onchange = e=>{ load(+e.target.value); play(); };
 $('speed').oninput = e=>{ $('speedLabel').textContent=(e.target.value/5).toFixed(1)+'x'; if(timer){ stop(); play(); } };
 addEventListener('keydown', e=>{
   if(e.target.tagName==='INPUT') return;
@@ -549,7 +551,8 @@ addEventListener('keydown', e=>{
 addEventListener('resize', ()=>render());
 
 buildStatic();
-load('random');
+load(3);
+play();   // 開いたら 2.0倍速で自動再生
 </script>
 </body>
 </html>
