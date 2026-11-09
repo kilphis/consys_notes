@@ -140,6 +140,14 @@ h3{font-size:.85rem;margin:0 0 8px}
 #ttbl th{width:auto}
 .notes li{margin:.3em 0;font-size:.88rem}
 footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
+/* 初回チュートリアル */
+#tut{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
+#tut.on{display:flex}
+#tut .box{max-width:520px;max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+#tut h2{margin:0 0 8px;font-size:1.05rem}
+#tut ol{margin:8px 0 12px;padding-left:1.3em;font-size:.9rem}
+#tut li{margin:.45em 0}
+#tut .acts{display:flex;flex-wrap:wrap;gap:8px}
 /* スマホ: 固定バーを細くして画面を塞がない */
 @media(max-width:640px){
   .ctlbar{position:static;padding:8px 10px}
@@ -170,6 +178,8 @@ footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
           <button id="bPlay" class="primary">▶ 再生</button>
           <button id="bStep">1ステップ ▶</button>
           <button id="bReset">↺ リセット</button>
+          <button id="bHelp">？ 使い方</button>
+          <button id="bCopy" title="依頼文とコードをコピー">🤖 AIに聞く用にコピー</button>
           <label class="sub" style="display:flex;gap:6px;align-items:center">n = <select id="nSel"></select></label>
           <label class="sub spd" style="display:flex;gap:8px;align-items:center;flex:1;min-width:200px">速度
             <input id="speed" type="range" min="1" max="10" value="10"><span id="speedLabel">2.0x</span></label>
@@ -252,6 +262,23 @@ footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
   <footer id="foot"></footer>
 </div>
 
+<div id="tut" role="dialog" aria-modal="true" aria-label="使い方">
+  <div class="box">
+    <h2>👋 このページの使い方（30秒）</h2>
+    <div class="sub">課題の MIPS コード <b>fact（階乗）</b>を、<b>1命令ずつ実行</b>して、レジスタとスタックがどう変わるかを見るページです。</div>
+    <ol>
+      <li><b>まず流し見：</b>「▶ 2.0倍速で流してみる」を押すと、全体の流れが自動で動きます。光っている行が「いま実行中の命令」です。</li>
+      <li><b>見る場所：</b>画面上の「実行トレース表」は課題シートと同じ向き（列＝サイクル）。その下の「スタック」は <code>$sp</code> が下へ伸びる様子です。</li>
+      <li><b>気になったら止める：</b>「⏸ 一時停止」→「1ステップ ▶ / ◀ 戻る」で1命令ずつ確認。速度はスライダーで変えられます。</li>
+      <li><b>n を変える：</b>「n =」のプルダウンで入力を変えて、再帰の深さの違いを見比べます。</li>
+      <li><b>分からなくなったら：</b>「🤖 AIに聞く用にコピー」で課題の説明依頼文をコピーして、AI に貼り付けます。</li>
+    </ol>
+    <div class="acts">
+      <button id="tutGo" class="primary">▶ 2.0倍速で流してみる</button>
+      <button id="tutSelf">自分で操作する（止めたまま）</button>
+    </div>
+  </div>
+</div>
 <script>
 /* ★1 META */
 const META = {
@@ -542,8 +569,37 @@ const NSEL = [0,1,2,3,5];
 NSEL.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; $('nSel').appendChild(o); });
 $('nSel').onchange = e=>{ load(+e.target.value); play(); };
 $('speed').oninput = e=>{ $('speedLabel').textContent=(e.target.value/5).toFixed(1)+'x'; if(timer){ stop(); play(); } };
+
+/* AI に解説させる用：依頼文＋コードだけをコピー */
+function aiText(){
+  const code = CODE.map(c=>(c.no!==''?String(c.no).padStart(2)+'  ':'    ')+'  '.repeat(c.indent)+c.text).join('\n');
+  return `大学「コンピュータシステム論」の課題（確認テスト）に取り組んでいます。この課題で「何をすればいいのか」を、全体像から順に教えてください。答えを埋めるのではなく、手順と考え方を知りたいです。
+
+【課題の中身（私の理解）】
+下の MIPS アセンブリ（階乗 fact の再帰）を、ある n（例: n = 4）で実行したとき、1命令ずつ（=1サイクルずつ）の状態を表にまとめる。表は列 = サイクル、行は次の通り。
+ 命令No / mnemonic / 機械語(16進32bit) / PC / next PC / $a0 / $t0 / $v0 / $sp / $ra / スタック(アドレスごとの中身)
+値は「その命令を実行した後」の状態。レジスタの初期値は未定義(U)。
+
+【設定の例】PC の開始 ${hex8(BASE)}、$sp の初期値 ${hex8(SP0)}、jal の次は nop（遅延スロット）で $ra = PC+8、命令は1語=4バイト。実際のシートの値と違う場合はシート側を優先します。
+
+【命令（左は命令No）】
+${code}
+
+【知りたいこと】
+1. 最初の12サイクルの例を元に、残りのサイクルでの実行トレース方法
+2. 各行の求め方の考え方（PC と next PC、機械語への翻訳、$sp の増減、スタックへの退避・復元）
+3. つまずきやすい点（beq の分岐先、jal の $ra、枠の解放後の値、I形式・R形式・J形式の違い）`;
+}
+$('bCopy').onclick = async ()=>{
+  const t = aiText(), b = $('bCopy'), old = b.textContent;
+  try{ await navigator.clipboard.writeText(t); b.textContent='✅ コピーしました'; }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=t; ta.style.cssText='position:fixed;left:0;top:0;width:90%;height:40%;z-index:99';
+    document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); b.textContent='✅ コピーしました'; }catch(_){ b.textContent='⚠ 表示欄を手動でコピー'; return; }
+    ta.remove(); }
+  setTimeout(()=>b.textContent=old, 2000);
+};
 addEventListener('keydown', e=>{
-  if(e.target.tagName==='INPUT') return;
+  if(e.target.tagName==='INPUT' || ($('tut') && $('tut').classList.contains('on'))) return;
   if(e.code==='Space'){ e.preventDefault(); play(); }
   if(e.code==='ArrowRight') step(1);
   if(e.code==='ArrowLeft') step(-1);
@@ -552,7 +608,17 @@ addEventListener('resize', ()=>render());
 
 buildStatic();
 load(3);
-play();   // 開いたら 2.0倍速で自動再生
+/* 初回はチュートリアル（2.0倍速で流す案内つき）、2回目以降はそのまま 2.0倍速で自動再生 */
+const tut = $('tut');
+const seenKey = 'consys_tut_seen';
+const markSeen = ()=>{ try{ localStorage.setItem(seenKey,'1'); }catch(e){} };
+const wasSeen = ()=>{ try{ return localStorage.getItem(seenKey)==='1'; }catch(e){ return false; } };
+function openTut(){ stop(); render(); tut.classList.add('on'); }
+function closeTut(){ tut.classList.remove('on'); markSeen(); }
+$('bHelp').onclick = openTut;
+$('tutGo').onclick = ()=>{ closeTut(); $('speed').value = 10; $('speedLabel').textContent='2.0x'; idx=0; play(); };
+$('tutSelf').onclick = closeTut;
+if(wasSeen()) play(); else openTut();
 </script>
 </body>
 </html>
