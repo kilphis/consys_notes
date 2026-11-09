@@ -140,6 +140,15 @@ h3{font-size:.85rem;margin:0 0 8px}
 #ttbl th{width:auto}
 .notes li{margin:.3em 0;font-size:.88rem}
 footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
+/* スマホ: 固定バーを細くして画面を塞がない */
+@media(max-width:640px){
+  .ctlbar{position:static;padding:8px 10px}
+  .ctlbar .kbd{display:none}
+  .ctlbar .say{min-height:0;padding:8px 10px;font-size:.85rem}
+  .ctlbar .ctrl{gap:6px;margin-top:8px}
+  .ctlbar button{padding:6px 10px;font-size:.8rem}
+  .ctlbar .spd{min-width:100% !important}
+}
 @media (prefers-reduced-motion: reduce){.bar,.idx{transition:none}}
 </style>
 </head>
@@ -162,10 +171,10 @@ footer{margin-top:28px;text-align:center;font-size:.75rem;color:var(--muted)}
           <button id="bStep">1ステップ ▶</button>
           <button id="bReset">↺ リセット</button>
           <button id="bNew">⤮ 別のデータ</button>
-          <label class="sub" style="display:flex;gap:8px;align-items:center;flex:1;min-width:200px">速度
+          <label class="sub spd" style="display:flex;gap:8px;align-items:center;flex:1;min-width:200px">速度
             <input id="speed" type="range" min="1" max="10" value="5"><span id="speedLabel">1.0x</span></label>
         </div>
-        <div class="sub" style="margin-top:4px;font-size:.72rem">ショートカット: Space=再生/停止　←/→=1ステップ戻る/進む</div>
+        <div class="sub kbd" style="margin-top:4px;font-size:.72rem">ショートカット: Space=再生/停止　←/→=1ステップ戻る/進む</div>
   </section>
   <div class="pair">
       <section class="card codecard">
